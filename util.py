@@ -1,14 +1,12 @@
 from werkzeug.datastructures import MultiDict
 import datetime
 import flask
-from typing import Dict, Any
+from typing import Dict, List, Union, Optional
 import traceback
 import json
-import uuid
-import db
+from uuid import UUID, uuid4
 import dateutil.parser
 import os
-from typing import List
 import db
 
 # Exceptions
@@ -20,14 +18,17 @@ class Flask500Exception(Exception):
     pass
 
 
-def _add_config_from_env(app, config_key: str, env_variable: str, missing_list: List[str]) -> bool:
-    """Function for adding configuration variables to a Flask app from environment variables.
+def _add_config_from_env(app, config_key: str, env_variable: str,
+                         missing_list: List[str]) -> bool:
+    """Function for adding configuration variables to a Flask app from environment
+    variables.
 
-    :param app: Flask app object.
-    :param config_key: the name of the config key in the Flask app: app.config[config_key].
-    :param env_variable: the name of the environment variable in which the value is stored.
-    :param missing_list: a list of strings to which missing environment variables are added.
-    :return: True if successful, False if environment variable was undefined.
+    :param app: Flask app object
+    :param config_key: the name of the config key in the app: app.config[config_key]
+    :param env_variable: the name of the environment variable in which the value is stored
+    :param missing_list: a list of strings to which missing environment variables
+    are added
+    :return: True if successful, False if environment variable was undefined
     """
     val = os.environ.get(env_variable, None)
     if val is not None:
@@ -49,7 +50,8 @@ def init_app_config(app):
     _add_config_from_env(app, 'DB_DATABASE', 'TIKKI_BACK_DB_DATABASE', missing_env_vars)
 
     if len(missing_env_vars) > 0:
-        raise RuntimeError('Following environment variables undefined: ' + ', '.join(missing_env_vars))
+        raise RuntimeError('Following environment variables undefined: ' +
+                           ', '.join(missing_env_vars))
 
 
 def jsonify(obj):
@@ -154,13 +156,12 @@ def flask_handle_exception(exception):
         return flask_return_exception(traceback.format_exc(), 500)
 
 
-def generate_uuid(count: int=1):
+def generate_uuid(count: int=1) -> Optional[Union[None, UUID, List[UUID]]]:
     if count == 1:
-        ret = uuid.uuid4()
+        return uuid4()
     elif count > 1:
-        ret = list()
+        ret = []
         for i in range(0, count):
-            ret.append(uuid.uuid4())
-    else:
-        ret = None
-    return ret
+            ret.append(uuid4())
+            return ret
+    return None
