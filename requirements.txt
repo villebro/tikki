@@ -1,0 +1,10 @@
+flask
+flask-jwt-simple
+flask-cors
+psycopg2
+sphinx
+sqlalchemy
+python-dateutil
+werkzeug
+python-dateutil
+alembic
