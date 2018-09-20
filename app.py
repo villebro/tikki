@@ -5,22 +5,30 @@ This module serves the RESTful interface required by the Tikki application.
 """
 
 import datetime
-import db
+from db.tables import User, Record, RecordType, Event, UserEventLink
+import db.api as db_api
 from enum import IntEnum
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_jwt_simple import JWTManager, jwt_required, jwt_optional, create_jwt, get_jwt_identity
-import util
+from flask_jwt_simple import (
+    create_jwt,
+    get_jwt_identity,
+    jwt_optional,
+    jwt_required,
+    JWTManager,
+)
+import utils
 from werkzeug.security import generate_password_hash, check_password_hash
 
-class RecordCategoryType(IntEnum):
+
+class RecordCategoryTypeEnum(IntEnum):
     UNKNOWN = 0
     TEST = 1
     QUESTIONNAIRE = 2
     ACTIVITY = 3
 
 
-class RecordType(IntEnum):
+class RecordTypeEnum(IntEnum):
     COOPERS_TEST = 1
     PUSH_UP_60_TEST = 2
     SIT_UPS = 3
@@ -40,21 +48,21 @@ class RecordType(IntEnum):
 
 
 app = Flask(__name__)
-util.init_app_config(app)
-db.init(app)
+utils.init_app_config(app)
+db_api.init(app)
 jwt = JWTManager(app)
 CORS(app)
 
 
 def get_obj_type(path):
     if path == '/user':
-        return db.User
+        return User
     elif path == '/record':
-        return db.Record
+        return Record
     elif path == '/event':
-        return db.Event
+        return Event
     elif path == 'user-event-link':
-        return db.UserEventLink
+        return UserEventLink
 
 
 @jwt.jwt_data_loader
@@ -69,20 +77,23 @@ def add_claims_to_access_token(identity):
         'rol': rol
     }
 
+
 @app.route('/login', methods=['POST'])
 def login():
     try:
-        util.flask_validate_request_is_json(request)
-        username_filter = util.get_args(request.json, required_args={'username': str})
-        password_filter = util.get_args(request.json, required_args={'password': str})
-        user = db.get_row(db.User, username_filter)
-        if user is not None and check_password_hash(user.password, password_filter['password']):
-            identity = util.create_jwt_identity(user)
-            return util.flask_return_success({'jwt': create_jwt(identity), 'user': user.jsondict})
+        utils.flask_validate_request_is_json(request)
+        username_filter = utils.get_args(request.json, required={'username': str})
+        password_filter = utils.get_args(request.json, required={'password': str})
+        user = db_api.get_row(User, username_filter)
+        if user is not None and check_password_hash(user.password,
+                                                    password_filter['password']):
+            identity = utils.create_jwt_identity(user)
+            return utils.flask_return_success({'jwt': create_jwt(identity),
+                                              'user': user.jsondict})
         else:
-            return util.flask_return_exception('Incorrect username or password', 400)
+            return utils.flask_return_exception('Incorrect username or password', 400)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/user', methods=['DELETE'], strict_slashes=False)
@@ -95,31 +106,36 @@ def delete_record():
         # Check object type based on endpoint and define filters accordingly.
 
         obj_type = get_obj_type(request.path)
-        required_args = dict()
-        if obj_type is db.UserEventLink:
+        required_args = {}
+        if obj_type is UserEventLink:
             required_args['event_id'] = str
         else:
             required_args['id'] = str
 
-        filters = util.get_args(request.args, required_args=required_args)
+        filters = utils.get_args(received=request.args,
+                                 required=required_args,
+                                 )
         filters['user_id'] = get_jwt_identity()
-        db.delete_row(obj_type, filters)
-        return util.flask_return_success('OK')
+        db_api.delete_row(obj_type, filters)
+        return utils.flask_return_success('OK')
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/uuid', methods=['GET'], strict_slashes=False)
 def get_uuid():
     try:
-        args = util.get_args(received_args=request.args, defaultable_args={'count': 1})
+        args = utils.get_args(received=request.args,
+                              defaultable={'count': 1},
+                              )
         count = args['count']
         if 0 < count <= 1024:
-            return util.flask_return_success(util.generate_uuid(count))
+            return utils.flask_return_success(utils.generate_uuid(count))
         else:
-            return util.flask_return_exception('The count parameter cannot be below 1 or greater than 1024.', 400)
+            return utils.flask_return_exception('The count parameter cannot be below 1 '
+                                                'or greater than 1024.', 400)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/whoami', methods=['GET'], strict_slashes=False)
@@ -129,11 +145,11 @@ def get_whoami():
 
         user = get_jwt_identity()
         if user is None:
-            return util.flask_return_success('Nobody')
+            return utils.flask_return_success('Nobody')
         else:
-            return util.flask_return_success(user)
+            return utils.flask_return_success(user)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/schema', methods=['GET'], strict_slashes=False)
@@ -144,9 +160,10 @@ def get_schema():
         type_dict = dict()
         if jwt_id is not None:
             filters = {'user_id': str(jwt_id)}
-            records = db.get_rows(db.Record, filters)
+            records = db_api.get_rows(Record, filters)
 
-            # sort records based on user_id and creation date to pick most recent result per user
+            # sort records based on user_id and creation date to pick most recent
+            # result per user
             # TODO: sort in db.get_rows
 
             records.sort(key=lambda x: (x.type_id, x.created_at), reverse=True)
@@ -156,78 +173,88 @@ def get_schema():
                     lag_type_id = record.type_id
                     type_dict[record.type_id] = record
 
-        rows = db.get_rows(db.RecordType, {})
+        rows = db_api.get_rows(RecordType, {})
         result_list = list()
         for row in rows:
             result = row.jsondict
-            result['ask'] = 1 if jwt_id is not None and row.category_id == 2 and row.category_id not in type_dict else 0
+            result['ask'] = 1 if jwt_id is not None and row.category_id == 2 and \
+                row.category_id not in type_dict else 0
             result_list.append(result)
-        return util.flask_return_success(result_list)
+        return utils.flask_return_success(result_list)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/user', methods=['GET'], strict_slashes=False)
 @jwt_required
 def get_user():
-    filters = util.get_args(received_args=request.args, optional_args={'id': str, 'username': str})
+    filters = utils.get_args(received=request.args,
+                             optional={'id': str, 'username': str},
+                             )
     try:
-        users = db.get_rows(db.User, filters)
-        return util.flask_return_success([i.jsondict for i in users])
+        users = db_api.get_rows(User, filters)
+        return utils.flask_return_success([i.jsondict for i in users])
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/user', methods=['POST'], strict_slashes=False)
 def post_user():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        uuid = str(util.generate_uuid())
-        in_user = util.get_args(request.json,
-                                required_args={'username': str, 'password': str},
-                                defaultable_args={'id': uuid, 'created_at': now, 'updated_at': now, 'payload': {}})
+        uuid = str(utils.generate_uuid())
+        in_user = utils.get_args(received=request.json,
+                                 required={'username': str, 'password': str},
+                                 defaultable={'id': uuid, 'created_at': now,
+                                              'updated_at': now, 'payload': {}},
+                                 )
         in_user['password'] = generate_password_hash(in_user['password'])
-        user = db.add_row(db.User, in_user)
-        identity = util.create_jwt_identity(user)
-        return util.flask_return_success({'jwt': create_jwt(identity), 'user': user.jsondict})
+        user = db_api.add_row(User, in_user)
+        identity = utils.create_jwt_identity(user)
+        return utils.flask_return_success({'jwt': create_jwt(identity),
+                                          'user': user.jsondict})
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/user', methods=['PUT'], strict_slashes=False)
 @jwt_required
 def put_user():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        in_user = util.get_args(request.json,
-                                optional_args={'username': str, 'password': str},
-                                defaultable_args={'created_at': now, 'updated_at': now, 'payload': {}})
+        in_user = utils.get_args(received=request.json,
+                                 optional={'username': str, 'password': str},
+                                 defaultable={'created_at': now, 'updated_at': now,
+                                              'payload': {}})
         in_user['password'] = generate_password_hash(in_user['password'])
         filters = {'id': get_jwt_identity()}
-        user = db.update_row(db.User, filters, in_user)
-        return util.flask_return_success(user.jsondict)
+        user = db_api.update_row(User, filters, in_user)
+        return utils.flask_return_success(user.jsondict)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/user', methods=['PATCH'], strict_slashes=False)
 @jwt_required
 def patch_user():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        in_user = util.get_args(request.json, required_args={'id': str}, defaultable_args={'updated_at': now},
-                                optional_args={'created_at': datetime.datetime, 'username': str,
-                                               'password': str, 'payload': dict})
+        in_user = utils.get_args(received=request.json,
+                                 required={'id': str},
+                                 defaultable={'updated_at': now},
+                                 optional={'created_at': datetime.datetime,
+                                           'username': str, 'password': str,
+                                           'payload': dict})
         if 'password' in in_user:
             in_user['password'] = generate_password_hash(in_user['password'])
         filters = {'id': in_user.pop('id', None)}
-        user = db.update_row(db.User, filters, in_user)
-        return util.flask_return_success(user.jsondict)
+        user = db_api.update_row(User, filters, in_user)
+        return utils.flask_return_success(user.jsondict)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/test/cooperstest/compstat', methods=['GET'], strict_slashes=False)
@@ -235,10 +262,11 @@ def patch_user():
 def get_cooperstest_compstat():
     try:
         user_id = get_jwt_identity()
-        filters = {'type_id': int(RecordType.COOPERS_TEST)}
-        records = db.get_rows(db.Record, filters)
+        filters = {'type_id': int(RecordTypeEnum.COOPERS_TEST)}
+        records = db_api.get_rows(Record, filters)
 
-        # sort records based on user_id and creation date to pick most recent result per user
+        # sort records based on user_id and creation date to pick most recent
+        # result per user
         # TODO: do sorting in db.get_rows
         records.sort(key=lambda x: (x.user_id, x.created_at), reverse=True)
         filtered_records = list()
@@ -253,7 +281,8 @@ def get_cooperstest_compstat():
 
         # sort filtered records and get index for quantile calculation
         try:
-            index = sorted(filtered_records, key=lambda x: x.payload['distance']).index(user_record)
+            index = sorted(filtered_records,
+                           key=lambda x: x.payload['distance']).index(user_record)
         except ValueError:
             index = None
 
@@ -261,10 +290,10 @@ def get_cooperstest_compstat():
             quantile = 0
         else:
             quantile = (index + 1) / len(filtered_records)
-        return util.flask_return_success({'quantile': quantile})
+        return utils.flask_return_success({'quantile': quantile})
 
     except Exception as e:
-        return util.flask_return_exception(e, 500)
+        return utils.flask_return_exception(e, 500)
 
 
 @app.route('/test/pushup60test/compstat', methods=['GET'], strict_slashes=False)
@@ -274,10 +303,11 @@ def get_pushup60test_compstat():
         user_id = get_jwt_identity()
         if user_id is None:
             return jsonify({'message': 'Undefined user id.'}), 400
-        filters = {'type_id': int(RecordType.PUSH_UP_60_TEST)}
-        records = db.get_rows(db.Record, filters)
+        filters = {'type_id': int(RecordTypeEnum.PUSH_UP_60_TEST)}
+        records = db_api.get_rows(Record, filters)
 
-        # sort records based on user_id and creation date to pick most recent result per user
+        # sort records based on user_id and creation date to pick most recent
+        # result per user
         # TODO: sort in db.get_rows
 
         records.sort(key=lambda x: (x.user_id, x.created_at), reverse=True)
@@ -305,186 +335,230 @@ def get_pushup60test_compstat():
         return jsonify({'result': {'quantile': quantile}}), 200
 
     except Exception as e:
-        return util.flask_return_exception(e, 500)
+        return utils.flask_return_exception(e, 500)
+
 
 @app.route('/record', methods=['GET'], strict_slashes=False)
 @jwt_required
 def get_record():
-    filters = util.get_args(received_args=request.args, optional_args={'id': str, 'user_id': str, 'event_id': str})
+    filters = utils.get_args(received=request.args,
+                             optional={'id': str, 'user_id': str, 'event_id': str},
+                             )
     try:
-        rows = db.get_rows(db.Record, filters)
-        return util.flask_return_success([row.jsondict for row in rows])
+        rows = db_api.get_rows(Record, filters)
+        return utils.flask_return_success([row.jsondict for row in rows])
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/record', methods=['POST'], strict_slashes=False)
 @jwt_required
 def post_record():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        uuid = str(util.generate_uuid())
-        row = util.get_args(request.json,
-                            optional_args={'event_id': str},
-                            defaultable_args={'id': uuid, 'created_at': now, 'updated_at': now,
-                                              'payload': {}, 'type_id': 0, 'user_id': get_jwt_identity()})
+        uuid = str(utils.generate_uuid())
+        row = utils.get_args(received=request.json,
+                             optional={'event_id': str},
+                             defaultable={'id': uuid, 'created_at': now,
+                                          'updated_at': now, 'payload': {},
+                                          'type_id': 0,
+                                          'user_id': get_jwt_identity()},
+                             )
 
-        # Add created_user which defaults to the user_id, merging it with the main row object.
-        created_user = util.get_args(request.json, defaultable_args={'created_user_id': row['user_id']})
+        # Add created_user which defaults to the user_id, merging it with the
+        # main row object.
+        user_id = row['user_id']
+        created_user = utils.get_args(received=request.json,
+                                      defaultable={'created_user_id': user_id},
+                                      )
         row.update(created_user)
 
         # And finally add details of who validated the record and when if provided.
-        validated = util.get_args(request.json, defaultable_args={'validated_at': now},
-                                  optional_args={'validated_user_id': str})
+        validated = utils.get_args(received=request.json,
+                                   defaultable={'validated_at': now},
+                                   optional={'validated_user_id': str},
+                                   )
         if 'validated_user_id' in validated:
             row.update(validated)
 
-        record = db.add_row(db.Record, row)
-        return util.flask_return_success(record.jsondict)
+        record = db_api.add_row(Record, row)
+        return utils.flask_return_success(record.jsondict)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/record', methods=['PATCH'], strict_slashes=False)
 @jwt_required
 def patch_record():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        row = util.get_args(request.json,
-                            required_args={'id': str},
-                            defaultable_args={'updated_at': now},
-                            optional_args={'created_at': datetime.datetime, 'payload': dict, 'type_id': int,
-                                           'event_id': str})
+        row = utils.get_args(received=request.json,
+                             required={'id': str},
+                             defaultable={'updated_at': now},
+                             optional={'created_at': datetime.datetime,
+                                       'payload': dict, 'type_id': int,
+                                       'event_id': str},
+                             )
 
-        # Add created_user which defaults to the user_id, merging it with the main row object.
-        created_user = util.get_args(request.json, defaultable_args={'created_user': get_jwt_identity()})
+        # Add created_user which defaults to the user_id, merging it with the
+        # main row object.
+        user = get_jwt_identity()
+
+        created_user = utils.get_args(received=request.json,
+                                      defaultable={'created_user': user},
+                                      )
         row.update(created_user)
 
         # And finally add details of who validated the record and when if provided.
-        validated = util.get_args(request.json, defaultable_args={'validated_at': now},
-                                  optional_args={'validated_user_id': str})
+        validated = utils.get_args(received=request.json,
+                                   defaultable={'validated_at': now},
+                                   optional={'validated_user_id': str},
+                                   )
         if validated['validated_user_id'] is not None:
             row.update(validated)
 
         filters = {'id': row.pop('id', None)}
-        record = db.update_row(db.Record, filters, row)
-        return util.flask_return_success(record.jsondict)
+        record = db_api.update_row(Record, filters, row)
+        return utils.flask_return_success(record.jsondict)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/record', methods=['PUT'], strict_slashes=False)
 @jwt_required
 def put_record():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        uuid = str(util.generate_uuid())
-        row = util.get_args(request.json,
-                            defaultable_args={'id': uuid, 'created_at': now, 'updated_at': now,
-                                              'payload': {}, 'type_id': 0, 'user_id': get_jwt_identity()},
-                            optional_args={'event_id': str})
+        uuid = str(utils.generate_uuid())
+        user = get_jwt_identity()
+        row = utils.get_args(received=request.json,
+                             defaultable={'id': uuid, 'created_at': now,
+                                          'updated_at': now, 'payload': {},
+                                          'type_id': 0,
+                                          'user_id': user},
+                             optional={'event_id': str},
+                             )
         filters = {'id': row.pop('id', None)}
 
-        # Add created_user which defaults to the user_id, merging it with the main row object.
-        created_user = util.get_args(request.json, defaultable_args={'created_user': get_jwt_identity()})
+        # Add created_user which defaults to the user_id, merging it with the
+        # main row object.
+        created_user = utils.get_args(received=request.json,
+                                      defaultable={'created_user': user},
+                                      )
         row.update(created_user)
 
         # And finally add details of who validated the record and when if provided.
-        validated = util.get_args(request.json, defaultable_args={'validated_at': now},
-                                  optional_args={'validated_user_id': str})
+        validated = utils.get_args(received=request.json,
+                                   defaultable={'validated_at': now},
+                                   optional={'validated_user_id': str},
+                                   )
         if validated['validated_user_id'] is not None:
             row.update(validated)
 
-        record = db.update_row(db.Record, filters, row)
-        return util.flask_return_success(record.jsondict)
+        record = db_api.update_row(Record, filters, row)
+        return utils.flask_return_success(record.jsondict)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/event', methods=['GET'], strict_slashes=False)
 @jwt_required
 def get_event():
-    filters = util.get_args(received_args=request.args, optional_args={'id': str, 'user_id': str, 'type_id': int})
+    filters = utils.get_args(received=request.args,
+                             optional={'id': str, 'user_id': str, 'type_id': int},
+                             )
     try:
-        rows = db.get_rows(db.Event, filters)
-        return util.flask_return_success([row.jsondict for row in rows])
+        rows = db_api.get_rows(Event, filters)
+        return utils.flask_return_success([row.jsondict for row in rows])
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/event', methods=['POST'], strict_slashes=False)
 @jwt_required
 def post_event():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        uuid = str(util.generate_uuid())
-        row = util.get_args(request.json,
-                            required_args={'name': str, 'description': str, 'address': str,
-                                           'postal_code': str, 'event_at': datetime.datetime},
-                            defaultable_args={'id': uuid, 'created_at': now, 'updated_at': now,
-                                              'payload': {}, 'organization_id': 0,
-                                              'user_id': get_jwt_identity()})
-        event = db.add_row(db.Event, row)
-        return util.flask_return_success(event.jsondict)
+        uuid = str(utils.generate_uuid())
+        user = get_jwt_identity()
+        row = utils.get_args(received=request.json,
+                             required={'name': str, 'description': str,
+                                       'address': str, 'postal_code': str,
+                                       'event_at': datetime.datetime},
+                             defaultable={'id': uuid, 'created_at': now,
+                                          'updated_at': now, 'payload': {},
+                                          'organization_id': 0, 'user_id': user},
+                             )
+        event = db_api.add_row(Event, row)
+        return utils.flask_return_success(event.jsondict)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/event', methods=['PUT'], strict_slashes=False)
 @jwt_required
 def put_event():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        uuid = str(util.generate_uuid())
-        row = util.get_args(request.json,
-                            required_args={'name': str, 'description': str, 'address': str,
-                                           'postal_code': str, 'event_at': datetime.datetime},
-                            defaultable_args={'id': uuid, 'created_at': now, 'updated_at': now,
-                                              'payload': {}, 'organization_id': 0,
-                                              'user_id': get_jwt_identity()})
+        uuid = str(utils.generate_uuid())
+        user = get_jwt_identity()
+        row = utils.get_args(received=request.json,
+                             required={'name': str, 'description': str,
+                                       'address': str, 'postal_code': str,
+                                       'event_at': datetime.datetime},
+                             defaultable={'id': uuid, 'created_at': now,
+                                          'updated_at': now, 'payload': {},
+                                          'organization_id': 0, 'user_id': user},
+                             )
 
         filters = {'id': row.pop('id', None)}
-        event = db.update_row(db.Event, filters, row)
-        return util.flask_return_success(event.jsondict)
+        event = db_api.update_row(Event, filters, row)
+        return utils.flask_return_success(event.jsondict)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/user-event-link', methods=['GET'], strict_slashes=False)
 @jwt_required
 def get_user_event_link():
-    filters = util.get_args(received_args=request.args, optional_args={'user_id': str, 'event_id': str})
+    filters = utils.get_args(received=request.args,
+                             optional={'user_id': str, 'event_id': str},
+                             )
     try:
-        rows = db.get_rows(db.UserEventLink, filters)
-        return util.flask_return_success([row.jsondict for row in rows])
+        rows = db_api.get_rows(UserEventLink, filters)
+        return utils.flask_return_success([row.jsondict for row in rows])
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route('/user-event-link', methods=['POST'], strict_slashes=False)
 @jwt_required
 def post_user_event_link():
     try:
-        util.flask_validate_request_is_json(request)
+        utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
-        row = util.get_args(request.json, required_args={'event_id': str},
-                            defaultable_args={'created_at': now, 'updated_at': now,
-                                              'user_id': get_jwt_identity(), 'payload': {}})
+        user = get_jwt_identity()
+        row = utils.get_args(received=request.json,
+                             required={'event_id': str},
+                             defaultable={'created_at': now, 'updated_at': now,
+                                          'user_id': user, 'payload': {}},
+                             )
 
-        obj = db.add_row(db.UserEventLink, row)
-        return util.flask_return_success(obj.jsondict)
+        obj = db_api.add_row(UserEventLink, row)
+        return utils.flask_return_success(obj.jsondict)
     except Exception as e:
-        return util.flask_handle_exception(e)
+        return utils.flask_handle_exception(e)
 
 
 @app.route("/")
 def hello():
     return "Greetings from the Tikki API"
+
 
 if __name__ == "__main__":
     app.run()

@@ -1,26 +1,24 @@
 from werkzeug.datastructures import MultiDict
 import datetime
+from exceptions import (
+    AppException,
+    Flask400Exception,
+    Flask500Exception,
+    NoRecordsException,
+)
 import flask
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Any
 import traceback
-import json
 from uuid import UUID, uuid4
 import dateutil.parser
 import os
-import db
-
-# Exceptions
-class Flask400Exception(Exception):
-    pass
+from db import tables
 
 
-class Flask500Exception(Exception):
-    pass
-
-
-def _add_config_from_env(app, config_key: str, env_variable: str,
+def _add_config_from_env(app: Any, config_key: str, env_variable: str,
                          missing_list: List[str]) -> bool:
-    """Function for adding configuration variables to a Flask app from environment
+    """
+    Function for adding configuration variables to a Flask app from environment
     variables.
 
     :param app: Flask app object
@@ -39,8 +37,9 @@ def _add_config_from_env(app, config_key: str, env_variable: str,
         return False
 
 
-def init_app_config(app):
-    """Initializes the Flask app with all necessary config parameters.
+def init_app_config(app: Any):
+    """
+    Initializes the Flask app with all necessary config parameters.
     """
     missing_env_vars = list()
     _add_config_from_env(app, 'JWT_SECRET_KEY', 'TIKKI_BACK_JWT_SECRET', missing_env_vars)
@@ -54,22 +53,19 @@ def init_app_config(app):
                            ', '.join(missing_env_vars))
 
 
-def jsonify(obj):
-    return json.dumps(obj)
-
-
-def create_jwt_identity(user) -> Dict:
+def create_jwt_identity(user: tables.Base) -> Dict[str, Any]:
     return {'sub': str(user.id), 'rol': user.type_id}
 
 
-def parse_value(value, default_type):
+def parse_value(value: Any, default_type: Any):
     if type(value) is str and default_type is datetime.datetime:
         return dateutil.parser.parse(value)
     else:
         return value if type(value) is default_type else None
 
 
-def get_anydict_value(source_dict, key, default_value, default_type):
+def get_anydict_value(source_dict: Union[Dict[Any, Any], MultiDict],
+                      key: str, default_value: Any, default_type: Any):
     if type(source_dict) is dict:
         value = source_dict.get(key, default_value)
         return parse_value(value, default_type)
@@ -77,57 +73,58 @@ def get_anydict_value(source_dict, key, default_value, default_type):
         value = source_dict.get(key, default_value, default_type)
         return parse_value(value, default_type)
     else:
-        raise Exception('Unsupported dict type: ' + type(source_dict).__name__)
+        raise AppException('Unsupported dict type: ' + type(source_dict).__name__)
 
 
-def get_args(received_args, required_args: Dict = None, defaultable_args: Dict = None,
-             optional_args: Dict = None, constant_args: Dict = None) -> Dict[str, Any]:
+def get_args(received: Dict[str, Any], required: Dict[str, Any] = None,
+             defaultable: Dict[str, Any] = None, optional: Dict[str, Any] = None,
+             constant: Dict[str, Any] = None) -> Dict[str, Any]:
     # Initialize local variables
 
-    required = dict() if required_args is None else required_args
-    defaultable = dict() if defaultable_args is None else defaultable_args
-    optional = dict() if optional_args is None else optional_args
-    constant = dict() if constant_args is None else constant_args
-    missing_args = list()
-    ret_dict = dict()
+    required = {} if required is None else required
+    defaultable = {} if defaultable is None else defaultable
+    optional = {} if optional is None else optional
+    constant = {} if constant is None else constant
+    missing = []
+    ret_dict = {}
 
     if required is None and defaultable is None and optional is None:
-        raise Exception('One of the following is required: required_args, defaultable_args or optional_args.')
+        raise AppException('One of the following is required: '
+                           'required, defaultable or optional.')
 
     # First loop through required args and add missing keys to error list
 
     for key, default_type in required.items():
-        val = get_anydict_value(received_args, key, None, default_type)
+        val = get_anydict_value(received, key, None, default_type)
         if val is None:
-            missing_args.append(key)
+            missing.append(key)
         ret_dict[key] = val
 
     # Next loop through defaultable args, falling back to default values
 
     for key, default_value in defaultable.items():
         default_type = type(default_value)
-        val = get_anydict_value(received_args, key, default_value, default_type)
+        val = get_anydict_value(received, key, default_value, default_type)
         ret_dict[key] = val
 
     # Next loop through optional args, omitting them if missing
 
     for key, default_type in optional.items():
-        val = get_anydict_value(received_args, key, None, default_type)
+        val = get_anydict_value(received, key, None, default_type)
         if val is not None:
             ret_dict[key] = val
 
     # Finally copy constants
 
-    if constant_args is not None:
-        ret_dict.update(constant_args)
+    ret_dict.update(constant)
 
     # Raise error if
 
-    if len(missing_args) > 0:
+    if len(missing) > 0:
         msg = "Missing following arguments:"
-        for arg in missing_args:
+        for arg in missing:
             msg += ' ' + arg
-        raise Exception(msg)
+        raise AppException(msg)
 
     return ret_dict
 
@@ -150,7 +147,7 @@ def flask_handle_exception(exception):
         return flask_return_exception(exception, 400)
     elif type(exception) is Flask500Exception:
         return flask_return_exception(exception, 500)
-    elif type(exception) is db.NoRecordsException:
+    elif type(exception) is NoRecordsException:
         return flask_return_exception(exception, 400)
     else:
         return flask_return_exception(traceback.format_exc(), 500)
