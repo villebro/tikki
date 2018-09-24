@@ -7,3 +7,4 @@ install: "pip install -r requirements.txt -r requirements-dev.txt"
 #  - python manage.py migrate
 script:
   - flake8
+  - mypy --ignore-missing-imports .
