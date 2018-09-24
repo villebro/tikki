@@ -7,7 +7,7 @@ from exceptions import (
     NoRecordsException,
 )
 import flask
-from typing import Dict, List, Union, Optional, Any
+from typing import Dict, List, Union, Optional, Any, Type
 import traceback
 from uuid import UUID, uuid4
 import dateutil.parser
@@ -41,12 +41,9 @@ def init_app_config(app: Any):
     """
     Initializes the Flask app with all necessary config parameters.
     """
-    missing_env_vars = list()
-    _add_config_from_env(app, 'JWT_SECRET_KEY', 'TIKKI_BACK_JWT_SECRET', missing_env_vars)
-    _add_config_from_env(app, 'DB_USERNAME', 'TIKKI_BACK_DB_USERNAME', missing_env_vars)
-    _add_config_from_env(app, 'DB_PASSWORD', 'TIKKI_BACK_DB_PASSWORD', missing_env_vars)
-    _add_config_from_env(app, 'DB_HOSTNAME', 'TIKKI_BACK_DB_HOSTNAME', missing_env_vars)
-    _add_config_from_env(app, 'DB_DATABASE', 'TIKKI_BACK_DB_DATABASE', missing_env_vars)
+    missing_env_vars = []  # type: List[str]
+    _add_config_from_env(app, 'JWT_SECRET_KEY', 'TIKKI_JWT_SECRET', missing_env_vars)
+    _add_config_from_env(app, 'SQLA_DB_URI', 'TIKKI_SQLA_DB_URI', missing_env_vars)
 
     if len(missing_env_vars) > 0:
         raise RuntimeError('Following environment variables undefined: ' +
@@ -57,36 +54,36 @@ def create_jwt_identity(user: tables.Base) -> Dict[str, Any]:
     return {'sub': str(user.id), 'rol': user.type_id}
 
 
-def parse_value(value: Any, default_type: Any):
-    if type(value) is str and default_type is datetime.datetime:
+def parse_value(value: str, default_type: Type[Any]):
+    if default_type is datetime.datetime:
         return dateutil.parser.parse(value)
-    else:
-        return value if type(value) is default_type else None
+    return value if isinstance(value, default_type) else None
 
 
-def get_anydict_value(source_dict: Union[Dict[Any, Any], MultiDict],
-                      key: str, default_value: Any, default_type: Any):
-    if type(source_dict) is dict:
-        value = source_dict.get(key, default_value)
-        return parse_value(value, default_type)
-    elif issubclass(type(source_dict), MultiDict):
+def get_anydict_value(source_dict: Union[Dict[str, Any], MultiDict],
+                      key: str, default_value: Any, default_type: Type[Any]):
+    if isinstance(source_dict, MultiDict):
         value = source_dict.get(key, default_value, default_type)
         return parse_value(value, default_type)
+    elif isinstance(source_dict, dict):
+        value = source_dict.get(key, default_value)
+        return parse_value(value, default_type)
     else:
-        raise AppException('Unsupported dict type: ' + type(source_dict).__name__)
+        raise AppException('Unsupported source_dict type: ' + type(source_dict).__name__)
 
 
-def get_args(received: Dict[str, Any], required: Dict[str, Any] = None,
-             defaultable: Dict[str, Any] = None, optional: Dict[str, Any] = None,
-             constant: Dict[str, Any] = None) -> Dict[str, Any]:
+def get_args(received: Dict[str, Any], required: Optional[Dict[str, Any]] = None,
+             defaultable: Optional[Dict[str, Any]] = None,
+             optional: Optional[Dict[str, Any]] = None,
+             constant: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     # Initialize local variables
 
     required = {} if required is None else required
     defaultable = {} if defaultable is None else defaultable
     optional = {} if optional is None else optional
     constant = {} if constant is None else constant
-    missing = []
-    ret_dict = {}
+    missing: List[str] = []
+    ret_dict: Dict[str, Any] = {}
 
     if required is None and defaultable is None and optional is None:
         raise AppException('One of the following is required: '
