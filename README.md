@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/tikki-fi/tikki.svg?branch=master)](https://travis-ci.com/tikki-fi/tikki)
+
 # Tikki #
 
 Tikki is the application for collection and management of field aptitude 
