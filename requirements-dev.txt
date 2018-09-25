@@ -1,3 +1,5 @@
-mypy
+codecov
 flake8
+mypy
+nose
 pylint
