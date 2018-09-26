@@ -177,7 +177,7 @@ def flask_handle_exception(exception: Union[FlaskRequestException, DbApiExceptio
         return flask_return_exception(traceback.format_exc(), 500)
 
 
-def generate_uuid(count: int=1) -> Optional[Union[None, UUID, List[UUID]]]:
+def generate_uuid(count: int=1) -> Optional[Union[UUID, List[UUID]]]:
     """
     Function for generating UUIDs
 
@@ -188,8 +188,5 @@ def generate_uuid(count: int=1) -> Optional[Union[None, UUID, List[UUID]]]:
     if count == 1:
         return uuid4()
     elif count > 1:
-        ret = []
-        for i in range(0, count):
-            ret.append(uuid4())
-            return ret
+        return [uuid4() for _ in range(count)]
     return None
