@@ -39,6 +39,17 @@ def _add_config_from_env(app: Any, config_key: str, env_variable: str,
         return False
 
 
+def get_sqla_uri() -> str:
+    """
+    Retrieve SQL Alchemy URI from environment variables
+    :return: SQL Alchemy URI
+    """
+    uri = os.environ.get('TIKKI_SQLA_DB_URI', None)
+    if uri is not None:
+        return uri
+    raise RuntimeError('SQLA_DB_URI environment variable undefined')
+
+
 def init_app_config(app: Any):
     """
     Initializes the Flask app with all necessary config parameters.

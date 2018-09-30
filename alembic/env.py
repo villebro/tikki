@@ -1,7 +1,8 @@
-from __future__ import with_statement
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
+
+import os
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -35,9 +36,11 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True)
+    url = os.environ.get('TIKKI_SQLA_DB_URI', None)
+    if url is None:
+        raise RuntimeError('SQLA_DB_URI environment variable undefined')
+
+    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
 
     with context.begin_transaction():
         context.run_migrations()
