@@ -2,8 +2,8 @@
 import sqlalchemy as sa
 import sqlalchemy.orm as sao
 from typing import List, Dict, Any, Type
-from db.tables import Base
-from exceptions import NoRecordsException, TooManyRecordsException
+from tikki.db.tables import Base
+from tikki.exceptions import NoRecordsException, TooManyRecordsException
 
 # Initialisation
 SESSION = None  # type: Any
