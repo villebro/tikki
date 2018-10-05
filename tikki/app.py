@@ -5,9 +5,9 @@ This module serves the RESTful interface required by the Tikki application.
 """
 import argparse
 import datetime
+from tikki import utils
 from tikki.db.tables import User, Record, RecordType, Event, UserEventLink
-from tikki.db import api as db_api
-from enum import IntEnum
+from tikki.db import api as db_api, metadata as db_metadata
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_simple import (
@@ -17,34 +17,9 @@ from flask_jwt_simple import (
     jwt_required,
     JWTManager,
 )
-import utils
+import flask_sqlalchemy
+import flask_migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-
-
-class RecordCategoryTypeEnum(IntEnum):
-    UNKNOWN = 0
-    TEST = 1
-    QUESTIONNAIRE = 2
-    ACTIVITY = 3
-
-
-class RecordTypeEnum(IntEnum):
-    COOPERS_TEST = 1
-    PUSH_UP_60_TEST = 2
-    SIT_UPS = 3
-    STANDING_JUMP = 4
-    PULL_UPS = 5
-    ACTIVITY_STATUS = 6
-    EDUCATION_DURATION = 7
-    CURRENT_FITNESS = 8
-    WORKING_ABILITY = 9
-    HIGH_BLOOD_PRESSURE = 10
-    DIABETES = 11
-    ALCOHOL = 12
-    SMOKING = 13
-    FAMILY_STATUS = 14
-    DEPRESSION = 15
-    SICK_LEAVE = 16
 
 
 app = Flask(__name__)
@@ -262,7 +237,7 @@ def patch_user():
 def get_cooperstest_compstat():
     try:
         user_id = get_jwt_identity()
-        filters = {'type_id': int(RecordTypeEnum.COOPERS_TEST)}
+        filters = {'type_id': int(db_metadata.RecordTypeEnum.COOPERS_TEST)}
         records = db_api.get_rows(Record, filters)
 
         # sort records based on user_id and creation date to pick most recent
@@ -303,7 +278,7 @@ def get_pushup60test_compstat():
         user_id = get_jwt_identity()
         if user_id is None:
             return jsonify({'message': 'Undefined user id.'}), 400
-        filters = {'type_id': int(RecordTypeEnum.PUSH_UP_60_TEST)}
+        filters = {'type_id': int(db_metadata.RecordTypeEnum.PUSH_UP_60_TEST)}
         records = db_api.get_rows(Record, filters)
 
         # sort records based on user_id and creation date to pick most recent
@@ -573,12 +548,17 @@ if __name__ == "__main__":
         print('validate')
         quit()
 
-    if args.migrate == 'up':
-        print('migrate up')
-        quit()
-    elif args.migrate == 'down':
-        print('migrate down')
-        quit()
+    if args.migrate:
+        if args.migrate == 'up':
+            flask_db = flask_sqlalchemy.SQLAlchemy(app)
+            migrate = flask_migrate.Migrate(app, flask_db)
+            with app.app_context():
+                from flask_migrate import upgrade as _upgrade
+                _upgrade()
+            quit()
+        elif args.migrate == 'down':
+            # TODO: implement once up migrations works properly
+            quit()
 
     if args.runserver:
         app.run()
