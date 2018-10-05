@@ -5,9 +5,6 @@ This module serves the RESTful interface required by the Tikki application.
 """
 import argparse
 import datetime
-import os
-import inspect
-from alembic.config import Config
 from tikki import utils
 from tikki.db.tables import User, Record, RecordType, Event, UserEventLink
 from tikki.db import api as db_api, metadata as db_metadata
