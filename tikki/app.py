@@ -8,9 +8,9 @@ import datetime
 import os
 import inspect
 from alembic.config import Config
+from tikki import utils
 from tikki.db.tables import User, Record, RecordType, Event, UserEventLink
-from tikki.db import api as db_api
-from tikki.db import metadata as db_metadata
+from tikki.db import api as db_api, metadata as db_metadata
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_simple import (
@@ -20,7 +20,8 @@ from flask_jwt_simple import (
     jwt_required,
     JWTManager,
 )
-import utils
+import flask_sqlalchemy
+import flask_migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -551,20 +552,15 @@ if __name__ == "__main__":
         quit()
 
     if args.migrate:
-        this_file_directory = os.path.dirname(os.path.abspath(inspect.stack()[0][1]))
-        root_directory = os.path.join(this_file_directory, '..')
-        alembic_directory = os.path.join(root_directory, 'alembic')
-        ini_path = os.path.join(root_directory, 'alembic.ini')
-
-        config = Config(ini_path)
-        config.set_main_option('script_location', alembic_directory)
-        config.cmd_opts = argparse.Namespace()  # arguments stub
-        print(config)
         if args.migrate == 'up':
-#            config.main(argv=['--raiseerr', 'upgrade', 'head'])
+            flask_db = flask_sqlalchemy.SQLAlchemy(app)
+            migrate = flask_migrate.Migrate(app, flask_db)
+            with app.app_context():
+                from flask_migrate import upgrade as _upgrade
+                _upgrade()
             quit()
         elif args.migrate == 'down':
-#            config.main(argv=['--raiseerr', 'downgrade', 'base'])
+            # TODO: implement once up migrations works properly
             quit()
 
     if args.runserver:

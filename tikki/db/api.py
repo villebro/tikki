@@ -19,7 +19,7 @@ def init(app):
     """
     global SESSION
 
-    engine = sa.create_engine(app.config['SQLA_DB_URI'])
+    engine = sa.create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
     SESSION = sao.sessionmaker(bind=engine)
 
 
