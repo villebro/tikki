@@ -8,6 +8,7 @@ import datetime
 from tikki import utils
 from tikki.db.tables import User, Record, RecordType, Event, UserEventLink
 from tikki.db import api as db_api, metadata as db_metadata
+from tikki.exceptions import AppException, FlaskRequestException
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_simple import (
@@ -17,8 +18,6 @@ from flask_jwt_simple import (
     jwt_required,
     JWTManager,
 )
-import flask_sqlalchemy
-import flask_migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -526,7 +525,7 @@ def post_user_event_link():
 
         obj = db_api.add_row(UserEventLink, row)
         return utils.flask_return_success(obj.jsondict)
-    except Exception as e:
+    except (AppException, FlaskRequestException) as e:
         return utils.flask_handle_exception(e)
 
 
@@ -547,20 +546,16 @@ if __name__ == "__main__":
     if args.validate:
         print('validate')
         quit()
-
-    if args.migrate:
+    elif args.migrate:
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config('alembic.ini')
         if args.migrate == 'up':
-            flask_db = flask_sqlalchemy.SQLAlchemy(app)
-            migrate = flask_migrate.Migrate(app, flask_db)
-            with app.app_context():
-                from flask_migrate import upgrade as _upgrade
-                _upgrade()
-            quit()
+            command.upgrade(alembic_cfg, 'head')
         elif args.migrate == 'down':
-            # TODO: implement once up migrations works properly
-            quit()
-
-    if args.runserver:
+            command.downgrade(alembic_cfg, 'base')
+        quit()
+    elif args.runserver:
         app.run()
 
     parser.print_help()

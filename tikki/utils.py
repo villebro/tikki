@@ -54,6 +54,8 @@ def init_app_config(app: Any):
     """
     Initializes the Flask app with all necessary config parameters.
     """
+    # Disable deprecation warning for flask-sqlalchemy
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     missing_env_vars = []  # type: List[str]
     _add_config_from_env(app, 'JWT_SECRET_KEY', 'TIKKI_JWT_SECRET', missing_env_vars)
     _add_config_from_env(app, 'SQLALCHEMY_DATABASE_URI', 'TIKKI_SQLA_DB_URI',

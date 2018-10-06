@@ -16,25 +16,15 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
-# always create constraints using standard naming conventions
-naming_convention = {
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s",
-}
-metadata = sa.MetaData(naming_convention=naming_convention)
-
 
 def upgrade():
-    op.create_table('record_type', metadata,
+    op.create_table('record_type',
                     sa.Column('id', UUIDType, primary_key=True),
                     sa.Column('name', sa.String, nullable=True),
                     sa.Column('schema', JSONType, nullable=False),
                     sa.Column('category_id', sa.Integer, nullable=False))
 
-    op.create_table('user', metadata,
+    op.create_table('user',
                     sa.Column('id', UUIDType, primary_key=True),
                     sa.Column('username', sa.String, nullable=False, unique=True),
                     sa.Column('password', sa.String, nullable=False),
@@ -45,7 +35,7 @@ def upgrade():
                               default=func.now()),
                     sa.Column('payload', JSONType, nullable=False))
 
-    op.create_table('record', metadata,
+    op.create_table('record',
                     sa.Column('id', UUIDType, primary_key=True),
                     sa.Column('created_at', sa.DateTime, nullable=False,
                               default=func.now()),
@@ -62,7 +52,7 @@ def upgrade():
                     sa.Column('validated_at', sa.DateTime, nullable=True),
                     sa.Column('payload', JSONType, nullable=False))
 
-    op.create_table('event', metadata,
+    op.create_table('event',
                     sa.Column('id', UUIDType, primary_key=True),
                     sa.Column('organization_id', sa.Integer, primary_key=True),
                     sa.Column('name', sa.String, nullable=False),
@@ -80,7 +70,7 @@ def upgrade():
                     sa.Column('latitude', sa.Numeric, nullable=True),
                     sa.Column('payload', JSONType, nullable=False))
 
-    op.create_table('user_event_link', metadata,
+    op.create_table('user_event_link',
                     sa.Column('user_id', UUIDType, sa.ForeignKey('user.id'),
                               primary_key=True),
                     sa.Column('event_id', UUIDType, sa.ForeignKey('event.id'),
