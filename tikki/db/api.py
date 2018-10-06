@@ -2,7 +2,9 @@
 import sqlalchemy as sa
 import sqlalchemy.orm as sao
 from typing import List, Dict, Any, Type
-from tikki.db.tables import Base
+from tikki import utils
+from tikki.db.tables import Base, RecordType
+from tikki.db import metadata
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
 
 # Initialisation
@@ -160,3 +162,23 @@ def update_rows(base_class: Type[Base], filter_by: Dict[str, Any],
             setattr(row, key, value)
         session.commit()
     return rows
+
+
+def regenerate_metadata():
+    """Rebuild dimension tables and views.
+    """
+    global SESSION
+    session = SESSION()
+    logger = utils.get_logger()
+    try:
+        session.query(RecordType).delete()
+        logger.info('truncate RecordType data in database')
+        for record_type in metadata.record_types.values():
+            print(record_type.name)
+            session.add(record_type)
+            logger.info('add RecordType ({}) to database'.format(record_type.name))
+        session.commit()
+        logger.info('Commit database session')
+    except Exception as ex:
+        logger.exception(ex)
+        session.rollback()

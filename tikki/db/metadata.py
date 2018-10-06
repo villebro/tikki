@@ -2,7 +2,9 @@
 Module containing type ids and similar that are used throughout the application
 """
 from enum import IntEnum
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict
+
+from tikki.db.tables import RecordType
 
 
 class CategoryEnum(IntEnum):
@@ -31,8 +33,6 @@ class RecordTypeEnum(IntEnum):
 
 # Record types
 
-RecordType = NamedTuple('RecordType', [
-    ('id', int), ('category_id', int), ('name', str), ('schema', Dict['str', Any])])
 record_types: Dict[int, RecordType] = {}
 
 
@@ -41,7 +41,11 @@ def _append_record_type(id_: int, category_id: int, name: str, schema: Dict[str,
     Append new record type to global record type dict
     """
     global record_types
-    record_types[id_] = RecordType(id_, category_id, name, schema)
+    record_types[id_] = RecordType(id=id_,
+                                   category_id=category_id,
+                                   name=name,
+                                   schema=schema,
+                                   )
 
 
 _append_record_type(0, 0, 'Unknown', {})

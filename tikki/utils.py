@@ -9,6 +9,7 @@ from tikki.exceptions import (
     NoRecordsException,
 )
 import flask
+import logging
 from typing import Dict, List, Union, Optional, Any, Type, Tuple
 import traceback
 from uuid import UUID, uuid4
@@ -50,10 +51,21 @@ def get_sqla_uri() -> str:
     raise RuntimeError('SQLA_DB_URI environment variable undefined')
 
 
-def init_app_config(app: Any):
+def get_logger() -> logging.Logger:
+    return logging.getLogger('tikki')
+
+
+def init_app(app: Any):
     """
     Initializes the Flask app with all necessary config parameters.
     """
+    # Setup logging
+    logger = logging.getLogger('tikki')
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    logger.addHandler(ch)
+
     # Disable deprecation warning for flask-sqlalchemy
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     missing_env_vars = []  # type: List[str]

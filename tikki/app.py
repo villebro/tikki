@@ -22,7 +22,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 
 app = Flask(__name__)
-utils.init_app_config(app)
+utils.init_app(app)
 db_api.init(app)
 jwt = JWTManager(app)
 CORS(app)
@@ -552,6 +552,7 @@ if __name__ == "__main__":
         alembic_cfg = Config('alembic.ini')
         if args.migrate == 'up':
             command.upgrade(alembic_cfg, 'head')
+            db_api.regenerate_metadata()
         elif args.migrate == 'down':
             command.downgrade(alembic_cfg, 'base')
         quit()

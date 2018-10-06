@@ -19,7 +19,7 @@ depends_on = None
 
 def upgrade():
     op.create_table('record_type',
-                    sa.Column('id', UUIDType, primary_key=True),
+                    sa.Column('id', sa.Integer, primary_key=True),
                     sa.Column('name', sa.String, nullable=True),
                     sa.Column('schema', JSONType, nullable=False),
                     sa.Column('category_id', sa.Integer, nullable=False))
@@ -33,23 +33,6 @@ def upgrade():
                               default=func.now()),
                     sa.Column('updated_at', sa.DateTime, nullable=False,
                               default=func.now()),
-                    sa.Column('payload', JSONType, nullable=False))
-
-    op.create_table('record',
-                    sa.Column('id', UUIDType, primary_key=True),
-                    sa.Column('created_at', sa.DateTime, nullable=False,
-                              default=func.now()),
-                    sa.Column('updated_at', sa.DateTime, nullable=False,
-                              default=func.now()),
-                    sa.Column('user_id', UUIDType, sa.ForeignKey('user.id'),
-                              nullable=True),
-                    sa.Column('created_user_id', sa.String, nullable=True),
-                    sa.Column('event_id', UUIDType, sa.ForeignKey('event.id'),
-                              nullable=True),
-                    sa.Column('parent_record_id', UUIDType, nullable=True),
-                    sa.Column('type_id', sa.Integer, nullable=False, default=0),
-                    sa.Column('validated_user_id', UUIDType, nullable=True),
-                    sa.Column('validated_at', sa.DateTime, nullable=True),
                     sa.Column('payload', JSONType, nullable=False))
 
     op.create_table('event',
@@ -70,11 +53,24 @@ def upgrade():
                     sa.Column('latitude', sa.Numeric, nullable=True),
                     sa.Column('payload', JSONType, nullable=False))
 
+    op.create_table('record',
+                    sa.Column('id', UUIDType, primary_key=True),
+                    sa.Column('created_at', sa.DateTime, nullable=False,
+                              default=func.now()),
+                    sa.Column('updated_at', sa.DateTime, nullable=False,
+                              default=func.now()),
+                    sa.Column('user_id', UUIDType, nullable=True),
+                    sa.Column('created_user_id', UUIDType, nullable=True),
+                    sa.Column('event_id', UUIDType, nullable=True),
+                    sa.Column('parent_record_id', UUIDType, nullable=True),
+                    sa.Column('type_id', sa.Integer, nullable=False, default=0),
+                    sa.Column('validated_user_id', UUIDType, nullable=True),
+                    sa.Column('validated_at', sa.DateTime, nullable=True),
+                    sa.Column('payload', JSONType, nullable=False))
+
     op.create_table('user_event_link',
-                    sa.Column('user_id', UUIDType, sa.ForeignKey('user.id'),
-                              primary_key=True),
-                    sa.Column('event_id', UUIDType, sa.ForeignKey('event.id'),
-                              primary_key=True),
+                    sa.Column('user_id', UUIDType, primary_key=True),
+                    sa.Column('event_id', UUIDType, primary_key=True),
                     sa.Column('created_at', sa.DateTime, nullable=False,
                               default=func.now()),
                     sa.Column('updated_at', sa.DateTime, nullable=False,
@@ -85,6 +81,6 @@ def upgrade():
 def downgrade():
     op.drop_table('user_event_link')
     op.drop_table('record')
-    op.drop_table('user')
     op.drop_table('event')
+    op.drop_table('user')
     op.drop_table('record_type')
