@@ -4,8 +4,6 @@ flake8
 flask
 flask-jwt-simple
 flask-cors
-flask-migrate
-flask-sqlalchemy
 mypy
 nose
 psycopg2-binary

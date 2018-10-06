@@ -24,8 +24,6 @@ setup(
         'flask',
         'flask-cors',
         'flask-jwt-simple',
-        'flask-migrate',
-        'flask-sqlalchemy',
         'python-dateutil',
         'sqlalchemy',
         'sqlalchemy-utils',
