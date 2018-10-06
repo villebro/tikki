@@ -5,7 +5,6 @@ from enum import IntEnum
 from typing import Any, Dict
 
 from tikki.db.tables import RecordType
-from tikki import utils
 
 
 class CategoryEnum(IntEnum):
