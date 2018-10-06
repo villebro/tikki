@@ -70,7 +70,7 @@ class RecordType(Base):
 
     @property
     def json_dict(self):
-        val = {'id': str(self.id),
+        val = {'id': self.id,
                'name': self.name,
                'schema': self.schema,
                'category_id': self.category_id,
