@@ -1,10 +1,12 @@
 """
-Module containing type ids and similar that are used throughout the application
+Module containing type ids and their schenas that are used throughout the application.
+These are currently regenerated at the end of the migration process, but will be moved
+to a dedicated migration step once wording and schemas are finalized.
 """
 from enum import IntEnum
 from typing import Any, Dict
 
-from tikki.db.tables import RecordType
+from tikki.db.tables import CategoryType, RecordType
 
 
 class CategoryEnum(IntEnum):
@@ -31,6 +33,24 @@ class RecordTypeEnum(IntEnum):
     SICK_LEAVE = 16
 
 
+# Category types
+
+category_types: Dict[int, CategoryType] = {}
+
+
+def _append_category_type(id_: int, name: str):
+    """
+    Append new record type to global record type dict
+    """
+    global category_types
+    category_types[id_] = CategoryType(id=id_, name=name)
+
+
+_append_category_type(0, 'Unknown')
+_append_category_type(1, 'Test')
+_append_category_type(2, 'Questionnaire')
+
+
 # Record types
 
 record_types: Dict[int, RecordType] = {}
@@ -41,11 +61,8 @@ def _append_record_type(id_: int, category_id: int, name: str, schema: Dict[str,
     Append new record type to global record type dict
     """
     global record_types
-    record_types[id_] = RecordType(id=id_,
-                                   category_id=category_id,
-                                   name=name,
-                                   schema=schema,
-                                   )
+    record_types[id_] = RecordType(id=id_, name=name, schema=schema,
+                                   category_id=category_id)
 
 
 _append_record_type(0, 0, 'Unknown', {})

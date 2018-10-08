@@ -3,7 +3,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as sao
 from typing import List, Dict, Any, Type
 from tikki import utils
-from tikki.db.tables import Base, RecordType
+from tikki.db.tables import Base, CategoryType, RecordType
 from tikki.db import metadata
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
 
@@ -171,12 +171,14 @@ def regenerate_metadata():
     session = SESSION()
     logger = utils.get_logger()
     try:
+        logger.info('Regenerate dim_category_type data in database')
+        session.query(CategoryType).delete()
+        for category_type in metadata.category_types.values():
+            session.add(category_type)
+        logger.info('Regenerate dim_record_type data in database')
         session.query(RecordType).delete()
-        logger.info('truncate RecordType data in database')
         for record_type in metadata.record_types.values():
-            print(record_type.name)
             session.add(record_type)
-            logger.info('add RecordType ({}) to database'.format(record_type.name))
         session.commit()
         logger.info('Commit database session')
     except Exception as ex:

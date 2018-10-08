@@ -18,13 +18,17 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table('record_type',
+    op.create_table('dim_category_type',
                     sa.Column('id', sa.Integer, primary_key=True),
-                    sa.Column('name', sa.String, nullable=True),
+                    sa.Column('name', sa.String, nullable=False))
+
+    op.create_table('dim_record_type',
+                    sa.Column('id', sa.Integer, primary_key=True),
+                    sa.Column('name', sa.String, nullable=False),
                     sa.Column('schema', JSONType, nullable=False),
                     sa.Column('category_id', sa.Integer, nullable=False))
 
-    op.create_table('user',
+    op.create_table('fact_user',
                     sa.Column('id', UUIDType, primary_key=True),
                     sa.Column('username', sa.String, nullable=False, unique=True),
                     sa.Column('password', sa.String, nullable=False),
@@ -35,7 +39,7 @@ def upgrade():
                               default=func.now()),
                     sa.Column('payload', JSONType, nullable=False))
 
-    op.create_table('event',
+    op.create_table('fact_event',
                     sa.Column('id', UUIDType, primary_key=True),
                     sa.Column('organization_id', sa.Integer, primary_key=True),
                     sa.Column('name', sa.String, nullable=False),
@@ -53,7 +57,7 @@ def upgrade():
                     sa.Column('latitude', sa.Numeric, nullable=True),
                     sa.Column('payload', JSONType, nullable=False))
 
-    op.create_table('record',
+    op.create_table('fact_record',
                     sa.Column('id', UUIDType, primary_key=True),
                     sa.Column('created_at', sa.DateTime, nullable=False,
                               default=func.now()),
@@ -68,7 +72,7 @@ def upgrade():
                     sa.Column('validated_at', sa.DateTime, nullable=True),
                     sa.Column('payload', JSONType, nullable=False))
 
-    op.create_table('user_event_link',
+    op.create_table('fact_user_event_link',
                     sa.Column('user_id', UUIDType, primary_key=True),
                     sa.Column('event_id', UUIDType, primary_key=True),
                     sa.Column('created_at', sa.DateTime, nullable=False,
@@ -79,8 +83,9 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table('user_event_link')
-    op.drop_table('record')
-    op.drop_table('event')
-    op.drop_table('user')
-    op.drop_table('record_type')
+    op.drop_table('fact_user_event_link')
+    op.drop_table('fact_record')
+    op.drop_table('fact_event')
+    op.drop_table('fact_user')
+    op.drop_table('dim_record_type')
+    op.drop_table('dim_category_type')
