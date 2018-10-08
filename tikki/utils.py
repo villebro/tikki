@@ -1,3 +1,8 @@
+"""
+Common utilities that are used throughout the application. Move anything that is used
+more than once that isn't specific to any certain functionality here.
+"""
+
 from werkzeug.datastructures import MultiDict
 import datetime
 from tikki.exceptions import (
@@ -35,9 +40,9 @@ def _add_config_from_env(app: Any, config_key: str, env_variable: str,
     if val is not None:
         app.config[config_key] = val
         return True
-    else:
-        missing_list.append(env_variable)
-        return False
+
+    missing_list.append(env_variable)
+    return False
 
 
 def get_sqla_uri() -> str:
@@ -96,8 +101,8 @@ def get_anydict_value(source_dict: Dict[str, Any], key: str, default_value: Any,
     elif isinstance(source_dict, dict):
         value = source_dict.get(key, default_value)
         return parse_value(value, default_type)
-    else:
-        raise AppException('Unsupported source_dict type: ' + type(source_dict).__name__)
+
+    raise AppException('Unsupported source_dict type: ' + type(source_dict).__name__)
 
 
 def get_args(received: Dict[str, Any], required: Optional[Dict[str, Type[Any]]] = None,
@@ -177,11 +182,11 @@ def flask_validate_request_is_json(request) -> None:
         raise Flask400Exception('Request body is not JSON.')
 
 
-def flask_return_exception(e, return_type: int=500) -> Tuple[Dict[str, Any], int]:
+def flask_return_exception(e, return_type: int = 500) -> Tuple[Dict[str, Any], int]:
     return flask.jsonify({'http_status_code': return_type, 'error': str(e)}), return_type
 
 
-def flask_return_success(result, return_type: int=200):
+def flask_return_success(result, return_type: int = 200):
     return flask.jsonify({'result': result}), return_type
 
 
@@ -199,11 +204,11 @@ def flask_handle_exception(exception: Union[FlaskRequestException, DbApiExceptio
         return flask_return_exception(exception, 500)
     elif isinstance(exception, NoRecordsException):
         return flask_return_exception(exception, 400)
-    else:
-        return flask_return_exception(traceback.format_exc(), 500)
+
+    return flask_return_exception(traceback.format_exc(), 500)
 
 
-def generate_uuid(count: int=1) -> Optional[Union[UUID, List[UUID]]]:
+def generate_uuid(count: int = 1) -> Optional[Union[UUID, List[UUID]]]:
     """
     Function for generating UUIDs
 
@@ -215,4 +220,5 @@ def generate_uuid(count: int=1) -> Optional[Union[UUID, List[UUID]]]:
         return uuid4()
     elif count > 1:
         return [uuid4() for _ in range(count)]
+
     return None
