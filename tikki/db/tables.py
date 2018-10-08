@@ -34,11 +34,48 @@ class TikkiBase(object):
 Base = declarative_base(cls=TikkiBase)  # type: Any
 
 
+class CategoryType(Base):
+    """
+    Table containing record category types
+    """
+    __tablename__ = 'dim_category_type'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+    @property
+    def json_dict(self):
+        val = {'id': self.id,
+               'name': self.name,
+               }
+        return val
+
+
+class RecordType(Base):
+    """
+    Table containing record types
+    """
+    __tablename__ = 'dim_record_type'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+    schema = sa.Column(JSONType, nullable=False)
+    category_id = sa.Column(sa.Integer, sa.ForeignKey('dim_category_type.id'),
+                            nullable=False)
+
+    @property
+    def json_dict(self):
+        val = {'id': self.id,
+               'name': self.name,
+               'schema': self.schema,
+               'category_id': self.category_id,
+               }
+        return val
+
+
 class User(Base):
     """
     Table containing user details
     """
-    __tablename__ = 'user'
+    __tablename__ = 'fact_user'
     id = sa.Column(UUIDType, primary_key=True)
     username = sa.Column(sa.String, nullable=False, unique=True)
     password = sa.Column(sa.String, nullable=False)
@@ -58,38 +95,18 @@ class User(Base):
                 }
 
 
-class RecordType(Base):
-    """
-    Table containing record types
-    """
-    __tablename__ = 'record_type'
-    id = sa.Column(sa.Integer, primary_key=True)
-    name = sa.Column(sa.String, nullable=True)
-    schema = sa.Column(JSONType, nullable=False)
-    category_id = sa.Column(sa.Integer, nullable=False)
-
-    @property
-    def json_dict(self):
-        val = {'id': self.id,
-               'name': self.name,
-               'schema': self.schema,
-               'category_id': self.category_id,
-               }
-        return val
-
-
 class Record(Base):
     """
     Table containing activity and other records, such as executed tests and
     answers to questionnaires.
     """
-    __tablename__ = 'record'
+    __tablename__ = 'fact_record'
     id = sa.Column(UUIDType, primary_key=True)
     created_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
     updated_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
-    user_id = sa.Column(UUIDType, sa.ForeignKey('user.id'), nullable=True)
-    created_user_id = sa.Column(UUIDType, nullable=True)
-    event_id = sa.Column(UUIDType, sa.ForeignKey('event.id'), nullable=True)
+    user_id = sa.Column(UUIDType, sa.ForeignKey('user.id'), nullable=False)
+    created_user_id = sa.Column(UUIDType, nullable=False)
+    event_id = sa.Column(UUIDType, sa.ForeignKey('event.id'), nullable=False)
     parent_record_id = sa.Column(UUIDType, nullable=True)
     type_id = sa.Column(sa.Integer, nullable=False, default=0)
     validated_user_id = sa.Column(UUIDType, nullable=True)
@@ -121,7 +138,7 @@ class Event(Base):
     """
     Table containing Events where activities can be executed.
     """
-    __tablename__ = 'event'
+    __tablename__ = 'fact_event'
     id = sa.Column(UUIDType, primary_key=True)
     organization_id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
@@ -163,9 +180,9 @@ class UserEventLink(Base):
     """
     Table containing links between users and events.
     """
-    __tablename__ = 'user_event_link'
-    user_id = sa.Column(UUIDType, sa.ForeignKey('user.id'), primary_key=True)
-    event_id = sa.Column(UUIDType, sa.ForeignKey('event.id'), primary_key=True)
+    __tablename__ = 'fact_user_event_link'
+    user_id = sa.Column(UUIDType, sa.ForeignKey('fact_user.id'), primary_key=True)
+    event_id = sa.Column(UUIDType, sa.ForeignKey('fact_event.id'), primary_key=True)
     created_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
     updated_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
     payload = sa.Column(JSONType, nullable=False)
