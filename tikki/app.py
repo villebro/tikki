@@ -554,6 +554,7 @@ if __name__ == "__main__":
             command.upgrade(alembic_cfg, 'head')
             db_api.regenerate_metadata()
         elif args.migrate == 'down':
+            db_api.drop_metadata()
             command.downgrade(alembic_cfg, 'base')
         quit()
     elif args.runserver:
