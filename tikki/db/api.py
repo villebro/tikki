@@ -4,7 +4,7 @@ import sqlalchemy.orm as sao
 from typing import List, Dict, Any, Type
 from tikki import utils
 from tikki.db.tables import Base, CategoryType, RecordType
-from tikki.db import metadata
+from tikki.db import metadata, views
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
 
 # Initialisation
@@ -179,8 +179,29 @@ def regenerate_metadata():
         session.query(RecordType).delete()
         for record_type in metadata.record_types.values():
             session.add(record_type)
+        for view in views.views.values():
+            session.execute(view)
         session.commit()
-        logger.info('Commit database session')
     except Exception as ex:
+        print(ex)
+        logger.exception(ex)
+        session.rollback()
+
+
+def drop_metadata():
+    """Rebuild dimension tables and views.
+    """
+    global SESSION
+    session = SESSION()
+    logger = utils.get_logger()
+    try:
+        print(1)
+        logger.info('Drop views')
+        for view in sorted(views.views.values(), reverse=True):
+            print(view)
+            session.execute(view)
+        session.commit()
+    except Exception as ex:
+        print(ex)
         logger.exception(ex)
         session.rollback()

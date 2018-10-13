@@ -146,7 +146,7 @@ class Event(Base):
     event_at = sa.Column(sa.DateTime, nullable=False)
     created_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
     updated_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
-    user_id = sa.Column(UUIDType, sa.ForeignKey('user.id'), nullable=True)
+    user_id = sa.Column(UUIDType, sa.ForeignKey('fact_user.id'), nullable=True)
     address = sa.Column(sa.String, nullable=True)
     postal_code = sa.Column(sa.String, nullable=True)
     longitude = sa.Column(sa.Numeric, nullable=True)

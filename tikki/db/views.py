@@ -15,7 +15,7 @@ select
   cast(fu.payload->>'city' as varchar(255)) as city,
   to_date(cast(fu.payload->>'birthDate' as varchar(255)), 'dd.mm.yyyy') as birthdate
 from
-  fact_user fu;""" # noqa
+  fact_user fu;"""  # noqa
 
 views['view_record_coopers'] = """create or replace view view_record_coopers as
 select
@@ -32,7 +32,7 @@ left outer join
     fr.event_id = fe.id
 where
   fr.type_id = 1 -- Cooper's test
-  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';""" # noqa
+  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';"""  # noqa
 
 views['view_record_pushups'] = """create or replace view view_record_pushups as
 select
@@ -49,7 +49,7 @@ left outer join
     fr.event_id = fe.id
 where
   fr.type_id = 2 -- Push-up 60 sec
-  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';""" # noqa
+  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';"""  # noqa
 
 views['view_record_situps'] = """create or replace view view_record_situps as
 select
@@ -66,7 +66,7 @@ left outer join
     fr.event_id = fe.id
 where
   fr.type_id = 3 -- situp 60 sec
-  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';""" # noqa
+  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';"""  # noqa
 
 views['view_record_situps'] = """create or replace view view_record_situps as
 select
@@ -83,7 +83,7 @@ left outer join
     fr.event_id = fe.id
 where
   fr.type_id = 3 -- situp 60 sec
-  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';""" # noqa
+  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';"""  # noqa
 
 views['view_record_standingjump'] = """create or replace view view_record_standingjump as
 select
@@ -92,7 +92,7 @@ select
   fr.event_id,
   coalesce(fe.event_at, fr.created_at) as created_at,
   cast(fr.payload->>'standingjump' as integer) as standingjump,
-  rank() over (partition by fr.user_id order by cast(r.payload->>'standingjump' as integer) desc, coalesce(fe.event_at, fr.created_at) desc, fr.id) as rnk
+  rank() over (partition by fr.user_id order by cast(fr.payload->>'standingjump' as integer) desc, coalesce(fe.event_at, fr.created_at) desc, fr.id) as rnk
 from
   fact_record fr
 left outer join
@@ -100,7 +100,7 @@ left outer join
     fr.event_id = fe.id
 where
   fr.type_id = 4 -- standing jump test
-  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';""" # noqa
+  and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';"""  # noqa
 
 views['view_record_standingjump'] = """create or replace view view_user_fa_index as
 select vu.first_name,
