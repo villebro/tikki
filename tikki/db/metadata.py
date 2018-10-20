@@ -9,6 +9,29 @@ from typing import Any, Dict
 from tikki.db.tables import CategoryType, RecordType
 
 
+class TestPerformanceEnum(IntEnum):
+    INSUFFICIENT = 0
+    POOR = 1
+    MEDIOCRE = 2
+    SATISFACTORY = 3
+    GOOD = 4
+    COMMENDABLE = 5
+    EXCELLENT = 6
+
+
+class MilitaryStatusEnum(IntEnum):
+    UNKNOWN = 0
+    CIVILIAN = 1
+    SOLDIER = 2
+    CONSCRIPT = 3
+
+
+class GenderEnum(IntEnum):
+    UNKNOWN = 0
+    MALE = 1
+    FEMALE = 2
+
+
 class CategoryEnum(IntEnum):
     UNKNOWN = 0
     TEST = 1
@@ -38,17 +61,17 @@ class RecordTypeEnum(IntEnum):
 category_types: Dict[int, CategoryType] = {}
 
 
-def _append_category_type(id_: int, name: str):
+def _append_category(id_: int, name: str):
     """
-    Append new record type to global record type dict
+    Append new record type to global category dict
     """
     global category_types
-    category_types[id_] = CategoryType(id=id_, name=name)
+    category_types[id_] = Category(id=id_, name=name)
 
 
-_append_category_type(0, 'Unknown')
-_append_category_type(1, 'Test')
-_append_category_type(2, 'Questionnaire')
+_append_category(0, 'Unknown')
+_append_category(1, 'Test')
+_append_category(2, 'Questionnaire')
 
 
 # Record types

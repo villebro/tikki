@@ -34,20 +34,19 @@ class TikkiBase(object):
 Base = declarative_base(cls=TikkiBase)  # type: Any
 
 
-class CategoryType(Base):
+class Category(Base):
     """
-    Table containing record category types
+    Table containing record categories
     """
-    __tablename__ = 'dim_category_type'
+    __tablename__ = 'dim_category'
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
 
     @property
     def json_dict(self):
-        val = {'id': self.id,
-               'name': self.name,
-               }
-        return val
+        return {'id': self.id,
+                'name': self.name,
+                }
 
 
 class RecordType(Base):
@@ -63,12 +62,11 @@ class RecordType(Base):
 
     @property
     def json_dict(self):
-        val = {'id': self.id,
-               'name': self.name,
-               'schema': self.schema,
-               'category_id': self.category_id,
-               }
-        return val
+        return {'id': self.id,
+                'name': self.name,
+                'schema': self.schema,
+                'category_id': self.category_id,
+                }
 
 
 class User(Base):
@@ -189,10 +187,85 @@ class UserEventLink(Base):
 
     @property
     def json_dict(self):
-        val = {'user_id': str(self.user_id),
-               'event_id': str(self.event_id),
-               'created_at': self.created_at.isoformat(),
-               'updated_at': self.updated_at.isoformat(),
-               'payload': self.payload,
-               }
-        return val
+        return {'user_id': str(self.user_id),
+                'event_id': str(self.event_id),
+                'created_at': self.created_at.isoformat(),
+                'updated_at': self.updated_at.isoformat(),
+                'payload': self.payload,
+                }
+
+
+class MilitaryStatus(Base):
+    """
+    Table containing military statuses (soldier, civilian, conscript)
+    """
+    __tablename__ = 'dim_mitiary_status'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'id': self.id,
+                'name': self.name,
+                }
+
+
+class Gender(Base):
+    """
+    Table containing genders
+    """
+    __tablename__ = 'dim_gender'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'id': self.id,
+                'name': self.name,
+                }
+
+
+class TestPerformance(Base):
+    """
+    Table containing test performance categories
+    """
+    __tablename__ = 'dim_test_performance'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'id': self.id,
+                'name': self.name,
+                }
+
+
+class TestPerformanceLimit(Base):
+    """
+    Table containing test performance category limits
+    """
+    __tablename__ = 'dim_test_performance_limit'
+    record_type_id = sa.Column(sa.Integer, primary_key=True)
+    military_status_id = sa.Column(sa.Integer, sa.ForeignKey('dim_military_status.id'),
+                                   primary_key=True)
+    gender_id = sa.Column(sa.Integer, sa.ForeignKey('dim_gender.id'), primary_key=True)
+    age_lower_limit = sa.Column(sa.Integer, nullable=False)
+    age_upper_limit = sa.Column(sa.Integer, nullable=False)
+    achievement_lower_limit = sa.Column(sa.Float, nullable=False)
+    achievement_upper_limit = sa.Column(sa.Float, nullable=False)
+    test_performance_id = sa.Column(sa.Integer, sa.ForeignKey('dim_test_performance.id'),
+                                    nullable=False)
+    score = sa.Column(sa.Float, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'record_type_id': self.record_type_id,
+                'military_status_id': self.military_status_id,
+                'gender_id': self.gender_id,
+                'age_lower_limit': self.age_lower_limit,
+                'age_upper_limit': self.age_upper_limit,
+                'achievement_lower_limit': self.achievement_lower_limit,
+                'achievement_upper_limit': self.achievement_upper_limit,
+                'excellence_id': self.excellence_id,
+                'score': self.score
+                }
