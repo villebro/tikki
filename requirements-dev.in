@@ -1,0 +1,10 @@
+codecov
+flake8
+mypy
+nose
+pip-tools
+psycopg2-binary
+pylint
+setuptools
+sphinx
+wheel
