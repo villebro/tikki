@@ -16,3 +16,30 @@ Sports Federation (RESUL).
 
 Tikki is an open source project managed by the Reserviläisurheiluliitto Ry
 (RESUL). https://resul.fi/
+
+## Developers guide ##
+
+Below are instructions for initializing and operating the development environment.
+
+### Initializing development environment ###
+
+We recomment using pipenv for managing a virtualenv, which can be installed as follows:
+
+```bash
+pip install pipenv
+pipenv --install --three -r requirements.txt
+```
+
+### Bumping dependencies ###
+
+`requirements.txt` is dynamically generated with pinned versions using pip-compile from 
+`setup.py` and `requirements-dev.in`, tha latter which contains dependencies only needed 
+for developent. It is recommended to regenerate requirements every once in a while with
+the following command:
+
+```bash
+pip-compile --output-file requirements.txt setup.py requirements-dev.in
+```
+
+This overwrites the old version of `requirements.txt` with the most recent pinned
+versions of all dependencies.
