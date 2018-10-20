@@ -5,6 +5,5 @@ nose
 pip-tools
 psycopg2-binary
 pylint
-setuptools
 sphinx
 wheel
