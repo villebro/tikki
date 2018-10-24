@@ -38,7 +38,7 @@ for developent. It is recommended to regenerate requirements every once in a whi
 the following command:
 
 ```bash
-pip-compile --output-file requirements.txt setup.py requirements-dev.in
+pip-compile -U --output-file requirements.txt setup.py requirements-dev.in
 ```
 
 This overwrites the old version of `requirements.txt` with the most recent pinned
