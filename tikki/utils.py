@@ -73,14 +73,14 @@ def init_app(app: Any):
 
     # Disable deprecation warning for flask-sqlalchemy
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    missing_env_vars = []  # type: List[str]
+    missing_env_vars: List[str] = []
     _add_config_from_env(app, 'JWT_SECRET_KEY', 'TIKKI_JWT_SECRET', missing_env_vars)
     _add_config_from_env(app, 'SQLALCHEMY_DATABASE_URI', 'TIKKI_SQLA_DB_URI',
                          missing_env_vars)
 
     if len(missing_env_vars) > 0:
-        raise RuntimeError('Following environment variables undefined: ' +
-                           ', '.join(missing_env_vars))
+        raise RuntimeError('Following environment variables undefined: '
+                           + ', '.join(missing_env_vars))
 
 
 def create_jwt_identity(user: tables.Base) -> Dict[str, Any]:
