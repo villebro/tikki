@@ -199,7 +199,7 @@ class MilitaryStatus(Base):
     """
     Table containing military statuses (soldier, civilian, conscript)
     """
-    __tablename__ = 'dim_mitiary_status'
+    __tablename__ = 'dim_military_status'
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
 
@@ -251,8 +251,8 @@ class TestLimit(Base):
     gender_id = sa.Column(sa.Integer, sa.ForeignKey('dim_gender.id'), primary_key=True)
     age_lower_limit = sa.Column(sa.Integer, nullable=False)
     age_upper_limit = sa.Column(sa.Integer, nullable=False)
-    achievement_lower_limit = sa.Column(sa.Float, nullable=False)
-    achievement_upper_limit = sa.Column(sa.Float, nullable=False)
+    lower_limit = sa.Column(sa.Float, nullable=False)
+    upper_limit = sa.Column(sa.Float, nullable=False)
     performance_id = sa.Column(sa.Integer, sa.ForeignKey('dim_performance.id'),
                                nullable=False)
     score = sa.Column(sa.Float, nullable=False)
@@ -264,8 +264,8 @@ class TestLimit(Base):
                 'gender_id': self.gender_id,
                 'age_lower_limit': self.age_lower_limit,
                 'age_upper_limit': self.age_upper_limit,
-                'achievement_lower_limit': self.achievement_lower_limit,
-                'achievement_upper_limit': self.achievement_upper_limit,
+                'lower_limit': self.lower_limit,
+                'upper_limit': self.upper_limit,
                 'performance_id': self.performance_id,
                 'score': self.score
                 }

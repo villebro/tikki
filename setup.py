@@ -24,6 +24,7 @@ setup(
         'flask',
         'flask-cors',
         'flask-jwt-simple',
+        'pandas',
         'python-dateutil',
         'sqlalchemy',
         'sqlalchemy-utils',

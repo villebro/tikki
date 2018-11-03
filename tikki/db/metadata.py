@@ -6,7 +6,7 @@ to a dedicated migration step once wording and schemas are finalized.
 from enum import IntEnum
 from typing import Any, Dict
 
-from tikki.db.tables import Category, Gender, Performance, RecordType
+from tikki.db.tables import Category, Gender, MilitaryStatus, Performance, RecordType
 
 
 class PerformanceEnum(IntEnum):
@@ -55,6 +55,21 @@ class RecordTypeEnum(IntEnum):
     DEPRESSION = 15
     SICK_LEAVE = 16
 
+
+# Category types
+
+military_statuses: Dict[int, MilitaryStatus] = {}
+
+
+def _append_military_status(id_: int, name: str):
+    global military_statuses
+    military_statuses[id_] = MilitaryStatus(id=id_, name=name)
+
+
+_append_military_status(0, 'Unknown')
+_append_military_status(1, 'Civilian')
+_append_military_status(2, 'Soldier')
+_append_military_status(3, 'Conscript')
 
 # Category types
 
