@@ -17,7 +17,13 @@ Sports Federation (RESUL).
 Tikki is an open source project managed by the Reserviläisurheiluliitto Ry
 (RESUL). https://resul.fi/
 
-## Developers guide ##
+## Requirements ##
+
+The service runs on Python 3.6, and currently supports Postgres 9.3+. Since database
+connections are done using SQLAlchemy, support can easily be added for other database
+types that support full JSON semantics.
+
+## Developer's guide ##
 
 Below are instructions for initializing and operating the development environment.
 
@@ -30,6 +36,15 @@ pip install pipenv
 pipenv --install --three -r requirements.txt
 ```
 
+### Installing local development database ###
+
+We recommend installing using a dockerized Postgres 9.3+ database for development.
+To do this, run the following
+
+```bash
+docker run -d -p 5432:5432 --name tikki-postgres -e POSTGRES_PASSWORD=tikkipwd postgres
+```
+
 ### Bumping dependencies ###
 
 `requirements.txt` is dynamically generated with pinned versions using pip-compile from 
@@ -38,7 +53,7 @@ for developent. It is recommended to regenerate requirements every once in a whi
 the following command:
 
 ```bash
-pip-compile --output-file requirements.txt setup.py requirements-dev.in
+pip-compile -U --output-file requirements.txt setup.py requirements-dev.in
 ```
 
 This overwrites the old version of `requirements.txt` with the most recent pinned

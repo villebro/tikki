@@ -552,7 +552,9 @@ if __name__ == "__main__":
         alembic_cfg = Config('alembic.ini')
         if args.migrate == 'up':
             command.upgrade(alembic_cfg, 'head')
-            db_api.regenerate_metadata()
+            db_api.regenerate_dimensions()
+            db_api.regenerate_limits()
+            db_api.regenerate_views()
         elif args.migrate == 'down':
             db_api.drop_metadata()
             command.downgrade(alembic_cfg, 'base')

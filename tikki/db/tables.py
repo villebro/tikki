@@ -34,20 +34,19 @@ class TikkiBase(object):
 Base = declarative_base(cls=TikkiBase)  # type: Any
 
 
-class CategoryType(Base):
+class Category(Base):
     """
-    Table containing record category types
+    Table containing record categories
     """
-    __tablename__ = 'dim_category_type'
+    __tablename__ = 'dim_category'
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
 
     @property
     def json_dict(self):
-        val = {'id': self.id,
-               'name': self.name,
-               }
-        return val
+        return {'id': self.id,
+                'name': self.name,
+                }
 
 
 class RecordType(Base):
@@ -58,17 +57,16 @@ class RecordType(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
     schema = sa.Column(JSONType, nullable=False)
-    category_id = sa.Column(sa.Integer, sa.ForeignKey('dim_category_type.id'),
+    category_id = sa.Column(sa.Integer, sa.ForeignKey('dim_category.id'),
                             nullable=False)
 
     @property
     def json_dict(self):
-        val = {'id': self.id,
-               'name': self.name,
-               'schema': self.schema,
-               'category_id': self.category_id,
-               }
-        return val
+        return {'id': self.id,
+                'name': self.name,
+                'schema': self.schema,
+                'category_id': self.category_id,
+                }
 
 
 class User(Base):
@@ -189,10 +187,85 @@ class UserEventLink(Base):
 
     @property
     def json_dict(self):
-        val = {'user_id': str(self.user_id),
-               'event_id': str(self.event_id),
-               'created_at': self.created_at.isoformat(),
-               'updated_at': self.updated_at.isoformat(),
-               'payload': self.payload,
-               }
-        return val
+        return {'user_id': str(self.user_id),
+                'event_id': str(self.event_id),
+                'created_at': self.created_at.isoformat(),
+                'updated_at': self.updated_at.isoformat(),
+                'payload': self.payload,
+                }
+
+
+class MilitaryStatus(Base):
+    """
+    Table containing military statuses (soldier, civilian, conscript)
+    """
+    __tablename__ = 'dim_military_status'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'id': self.id,
+                'name': self.name,
+                }
+
+
+class Gender(Base):
+    """
+    Table containing genders
+    """
+    __tablename__ = 'dim_gender'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'id': self.id,
+                'name': self.name,
+                }
+
+
+class Performance(Base):
+    """
+    Table containing test performance categories
+    """
+    __tablename__ = 'dim_performance'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'id': self.id,
+                'name': self.name,
+                }
+
+
+class TestLimit(Base):
+    """
+    Table containing test limits
+    """
+    __tablename__ = 'dim_test_limit'
+    record_type_id = sa.Column(sa.Integer, primary_key=True)
+    military_status_id = sa.Column(sa.Integer, sa.ForeignKey('dim_military_status.id'),
+                                   primary_key=True)
+    gender_id = sa.Column(sa.Integer, sa.ForeignKey('dim_gender.id'), primary_key=True)
+    age_lower_limit = sa.Column(sa.Integer, nullable=False)
+    age_upper_limit = sa.Column(sa.Integer, nullable=False)
+    lower_limit = sa.Column(sa.Float, nullable=False)
+    upper_limit = sa.Column(sa.Float, nullable=False)
+    performance_id = sa.Column(sa.Integer, sa.ForeignKey('dim_performance.id'),
+                               nullable=False)
+    score = sa.Column(sa.Float, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'record_type_id': self.record_type_id,
+                'military_status_id': self.military_status_id,
+                'gender_id': self.gender_id,
+                'age_lower_limit': self.age_lower_limit,
+                'age_upper_limit': self.age_upper_limit,
+                'lower_limit': self.lower_limit,
+                'upper_limit': self.upper_limit,
+                'performance_id': self.performance_id,
+                'score': self.score
+                }

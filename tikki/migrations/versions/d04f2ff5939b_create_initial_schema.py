@@ -18,7 +18,7 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table('dim_category_type',
+    op.create_table('dim_category',
                     sa.Column('id', sa.Integer, primary_key=True),
                     sa.Column('name', sa.String, nullable=False))
 
