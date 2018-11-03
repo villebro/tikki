@@ -17,7 +17,7 @@ Sports Federation (RESUL).
 Tikki is an open source project managed by the Reserviläisurheiluliitto Ry
 (RESUL). https://resul.fi/
 
-## Developers guide ##
+## Developer's guide ##
 
 Below are instructions for initializing and operating the development environment.
 
