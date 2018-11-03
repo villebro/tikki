@@ -102,7 +102,7 @@ where
   fr.type_id = 4 -- standing jump test
   and coalesce(fe.event_at, fr.created_at) >= now() - interval '2 years';"""  # noqa
 
-views['view_record_standingjump'] = """create or replace view view_user_fa_index as
+views['view_user_fa_index'] = """create or replace view view_user_fa_index as
 select vu.first_name,
        vu.last_name,
        vu.city,

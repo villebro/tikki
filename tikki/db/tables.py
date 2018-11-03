@@ -57,7 +57,7 @@ class RecordType(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
     schema = sa.Column(JSONType, nullable=False)
-    category_id = sa.Column(sa.Integer, sa.ForeignKey('dim_category_type.id'),
+    category_id = sa.Column(sa.Integer, sa.ForeignKey('dim_category.id'),
                             nullable=False)
 
     @property
@@ -225,11 +225,11 @@ class Gender(Base):
                 }
 
 
-class TestPerformance(Base):
+class Performance(Base):
     """
     Table containing test performance categories
     """
-    __tablename__ = 'dim_test_performance'
+    __tablename__ = 'dim_performance'
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
 
@@ -240,11 +240,11 @@ class TestPerformance(Base):
                 }
 
 
-class TestPerformanceLimit(Base):
+class TestLimit(Base):
     """
-    Table containing test performance category limits
+    Table containing test limits
     """
-    __tablename__ = 'dim_test_performance_limit'
+    __tablename__ = 'dim_test_limit'
     record_type_id = sa.Column(sa.Integer, primary_key=True)
     military_status_id = sa.Column(sa.Integer, sa.ForeignKey('dim_military_status.id'),
                                    primary_key=True)
@@ -253,8 +253,8 @@ class TestPerformanceLimit(Base):
     age_upper_limit = sa.Column(sa.Integer, nullable=False)
     achievement_lower_limit = sa.Column(sa.Float, nullable=False)
     achievement_upper_limit = sa.Column(sa.Float, nullable=False)
-    test_performance_id = sa.Column(sa.Integer, sa.ForeignKey('dim_test_performance.id'),
-                                    nullable=False)
+    performance_id = sa.Column(sa.Integer, sa.ForeignKey('dim_performance.id'),
+                               nullable=False)
     score = sa.Column(sa.Float, nullable=False)
 
     @property
@@ -266,6 +266,6 @@ class TestPerformanceLimit(Base):
                 'age_upper_limit': self.age_upper_limit,
                 'achievement_lower_limit': self.achievement_lower_limit,
                 'achievement_upper_limit': self.achievement_upper_limit,
-                'excellence_id': self.excellence_id,
+                'performance_id': self.performance_id,
                 'score': self.score
                 }

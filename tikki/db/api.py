@@ -4,7 +4,7 @@ import sqlalchemy.orm as sao
 from typing import List, Dict, Any, Type
 from tikki import utils
 from tikki.db.tables import (
-    Base, Category, Gender, RecordType, TestPerformance
+    Base, Category, Gender, RecordType, Performance
 )
 from tikki.db import metadata, views
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
@@ -166,47 +166,48 @@ def update_rows(base_class: Type[Base], filter_by: Dict[str, Any],
     return rows
 
 
-def regenerate_metadata():
+def regenerate_dimensions():
     """Rebuild dimension tables and views.
     """
     global SESSION
     session = SESSION()
     logger = utils.get_logger()
     try:
-        logger.info('Regenerate dim_category_type data in database')
+        logger.info('Regenerate dim_category data in database')
         session.query(Category).delete()
-        for category_type in metadata.category_types.values():
-            session.add(category_type)
+        for category in metadata.categories.values():
+            session.add(category)
 
         logger.info('Regenerate dim_record_type data in database')
         session.query(RecordType).delete()
         for record_type in metadata.record_types.values():
             session.add(record_type)
 
-        logger.info('Regenerate views')
-        for view in views.views.values():
-            session.execute(view)
+        logger.info('Regenerate dim_performance data in database')
+        session.query(Performance).delete()
+        for performance in metadata.performances.values():
+            session.add(performance)
 
-        test_performances = [
-            TestPerformance(6, 'Excellent'),  # Erinomainen
-            TestPerformance(5, 'Very Good'),  # Kiitettävä
-            TestPerformance(4, 'Good'),  # Hyvä
-            TestPerformance(3, 'Satisfactory'),  # Tyydyttävä
-            TestPerformance(2, 'Sufficient'),  # Välttävä
-            TestPerformance(1, 'Poor'),  # Heikko
-            TestPerformance(0, 'Inadequate'),  # Riittämätön
-        ]
-        for test_performance in test_performances:
-            session.add(test_performance)
-
-        genders = [
-            Gender(0, 'Unknown'),
-            Gender(1, 'Male'),
-            Gender(2, 'Female'),
-        ]
-        for gender in genders:
+        logger.info('Regenerate dim_gender data in database')
+        session.query(Gender).delete()
+        for gender in metadata.genders.values():
             session.add(gender)
 
+        session.commit()
+    except Exception as ex:
+        print(ex)
+        logger.exception(ex)
+        session.rollback()
+
+
+def regenerate_views():
+    global SESSION
+    session = SESSION()
+    logger = utils.get_logger()
+    logger.info('Regenerate views')
+    try:
+        for view in views.views.values():
+            session.execute(view)
         session.commit()
     except Exception as ex:
         print(ex)

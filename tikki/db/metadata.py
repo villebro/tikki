@@ -6,17 +6,17 @@ to a dedicated migration step once wording and schemas are finalized.
 from enum import IntEnum
 from typing import Any, Dict
 
-from tikki.db.tables import Category, RecordType
+from tikki.db.tables import Category, Gender, Performance, RecordType
 
 
-class TestPerformanceEnum(IntEnum):
-    EXCELLENT = 6
-    VERY_GOOD = 5
-    GOOD = 4
-    SATISFACTORY = 3
-    SUFFICIENT = 2
-    POOR = 1
+class PerformanceEnum(IntEnum):
     INSUFFICIENT = 0
+    POOR = 1
+    SUFFICIENT = 2
+    SATISFACTORY = 3
+    GOOD = 4
+    VERY_GOOD = 5
+    EXCELLENT = 6
 
 
 class MilitaryStatusEnum(IntEnum):
@@ -62,9 +62,6 @@ categories: Dict[int, Category] = {}
 
 
 def _append_category(id_: int, name: str):
-    """
-    Append new record type to global category dict
-    """
     global categories
     categories[id_] = Category(id=id_, name=name)
 
@@ -73,6 +70,37 @@ _append_category(0, 'Unknown')
 _append_category(1, 'Test')
 _append_category(2, 'Questionnaire')
 
+# Genders
+
+genders: Dict[int, Gender] = {}
+
+
+def _append_gender(id_: int, name: str):
+    global genders
+    genders[id_] = Gender(id=id_, name=name)
+
+
+_append_gender(0, 'Unknown')
+_append_gender(1, 'Male')
+_append_gender(2, 'Female')
+
+# Performances
+
+performances: Dict[int, Performance] = {}
+
+
+def _append_performance(id_: int, name: str):
+    global performances
+    performances[id_] = Performance(id=id_, name=name)
+
+
+_append_performance(6, 'Excellent')
+_append_performance(5, 'Very Good')
+_append_performance(4, 'Good')
+_append_performance(3, 'Satisfactory')
+_append_performance(2, 'Sufficient')
+_append_performance(1, 'Poor')
+_append_performance(0, 'Inadequate')
 
 # Record types
 
@@ -80,9 +108,6 @@ record_types: Dict[int, RecordType] = {}
 
 
 def _append_record_type(id_: int, category_id: int, name: str, schema: Dict[str, Any]):
-    """
-    Append new record type to global record type dict
-    """
     global record_types
     record_types[id_] = RecordType(id=id_, name=name, schema=schema,
                                    category_id=category_id)
