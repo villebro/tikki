@@ -4,7 +4,7 @@ import sqlalchemy.orm as sao
 from typing import List, Dict, Any, Type
 from tikki import utils
 from tikki.db.tables import (
-    Base, Category, Gender, MilitaryStatus, RecordType, TestPerformance
+    Base, Category, Gender, RecordType, TestPerformance
 )
 from tikki.db import metadata, views
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
@@ -188,12 +188,13 @@ def regenerate_metadata():
             session.execute(view)
 
         test_performances = [
-            TestPerformance(1, 'Excellent'),  # Erinomainen
-            TestPerformance(2, 'Very Good'),  # Kiitettävä
-            TestPerformance(3, 'Good'),  # Hyvä
-            TestPerformance(4, 'Satisfactory'),  # Tyydyttävä
-            TestPerformance(5, 'Sufficient'),  # Välttävä
-            TestPerformance(6, 'Poor'),  # Heikko
+            TestPerformance(6, 'Excellent'),  # Erinomainen
+            TestPerformance(5, 'Very Good'),  # Kiitettävä
+            TestPerformance(4, 'Good'),  # Hyvä
+            TestPerformance(3, 'Satisfactory'),  # Tyydyttävä
+            TestPerformance(2, 'Sufficient'),  # Välttävä
+            TestPerformance(1, 'Poor'),  # Heikko
+            TestPerformance(0, 'Inadequate'),  # Riittämätön
         ]
         for test_performance in test_performances:
             session.add(test_performance)

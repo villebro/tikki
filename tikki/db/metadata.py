@@ -6,17 +6,17 @@ to a dedicated migration step once wording and schemas are finalized.
 from enum import IntEnum
 from typing import Any, Dict
 
-from tikki.db.tables import CategoryType, RecordType
+from tikki.db.tables import Category, RecordType
 
 
 class TestPerformanceEnum(IntEnum):
-    INSUFFICIENT = 0
-    POOR = 1
-    MEDIOCRE = 2
-    SATISFACTORY = 3
-    GOOD = 4
-    COMMENDABLE = 5
     EXCELLENT = 6
+    VERY_GOOD = 5
+    GOOD = 4
+    SATISFACTORY = 3
+    SUFFICIENT = 2
+    POOR = 1
+    INSUFFICIENT = 0
 
 
 class MilitaryStatusEnum(IntEnum):
@@ -58,15 +58,15 @@ class RecordTypeEnum(IntEnum):
 
 # Category types
 
-category_types: Dict[int, CategoryType] = {}
+categories: Dict[int, Category] = {}
 
 
 def _append_category(id_: int, name: str):
     """
     Append new record type to global category dict
     """
-    global category_types
-    category_types[id_] = Category(id=id_, name=name)
+    global categories
+    categories[id_] = Category(id=id_, name=name)
 
 
 _append_category(0, 'Unknown')
