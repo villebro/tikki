@@ -4,7 +4,7 @@ import sqlalchemy.orm as sao
 from typing import List, Dict, Any, Type
 from tikki import utils
 from tikki.db.tables import (
-    Base, CategoryType, Excellence, Gender, MilitaryStatus, RecordType
+    Base, Category, Gender, MilitaryStatus, RecordType, TestPerformance
 )
 from tikki.db import metadata, views
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
@@ -174,7 +174,7 @@ def regenerate_metadata():
     logger = utils.get_logger()
     try:
         logger.info('Regenerate dim_category_type data in database')
-        session.query(CategoryType).delete()
+        session.query(Category).delete()
         for category_type in metadata.category_types.values():
             session.add(category_type)
 
@@ -187,15 +187,25 @@ def regenerate_metadata():
         for view in views.views.values():
             session.execute(view)
 
-        excellences = [
-            Excellence(1, 'Excellent')
+        test_performances = [
+            TestPerformance(1, 'Excellent'),  # Erinomainen
+            TestPerformance(2, 'Very Good'),  # Kiitettävä
+            TestPerformance(3, 'Good'),  # Hyvä
+            TestPerformance(4, 'Satisfactory'),  # Tyydyttävä
+            TestPerformance(5, 'Sufficient'),  # Välttävä
+            TestPerformance(6, 'Poor'),  # Heikko
         ]
+        for test_performance in test_performances:
+            session.add(test_performance)
 
         genders = [
             Gender(0, 'Unknown'),
             Gender(1, 'Male'),
             Gender(2, 'Female'),
         ]
+        for gender in genders:
+            session.add(gender)
+
         session.commit()
     except Exception as ex:
         print(ex)
