@@ -279,10 +279,10 @@ def get_rows_from_file(filename: str) -> List[TestLimit]:
 
 def regenerate_limits():
     limits: List[TestLimit] = []
-    limits.extend(get_rows_from_file('coopers.tsv'))
-    limits.extend(get_rows_from_file('pushup.tsv'))
-    limits.extend(get_rows_from_file('standingjump.tsv'))
-    limits.extend(get_rows_from_file('situp.tsv'))
+    limits.extend(get_rows_from_file('coopers.csv'))
+    limits.extend(get_rows_from_file('pushup.csv'))
+    limits.extend(get_rows_from_file('standingjump.csv'))
+    limits.extend(get_rows_from_file('situp.csv'))
 
     global SESSION
     session = SESSION()
