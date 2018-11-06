@@ -531,7 +531,7 @@ def post_user_event_link():
 
 @app.route("/")
 def hello():
-    return "Greetings from the Tikki API"
+    return "Greetings from the Tikki API V1"
 
 
 if __name__ == "__main__":
