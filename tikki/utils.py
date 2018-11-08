@@ -87,13 +87,15 @@ def create_jwt_identity(user: tables.Base) -> Dict[str, Any]:
     return {'sub': str(user.id), 'rol': user.type_id}
 
 
-def parse_value(value: str, default_type: Type[Any]):
-    if default_type is datetime.datetime:
+def parse_value(value: Any, default_type: Type[Any]) -> Any:
+    # datetimes will be sent in string format, therefore need
+    # to be parsed first
+    if default_type is datetime.datetime and isinstance(value, str):
         return dateutil.parser.parse(value)
     return value if isinstance(value, default_type) else None
 
 
-def get_anydict_value(source_dict: Dict[str, Any], key: str, default_value: Any,
+def get_anydict_value(source_dict: Dict[Any], key: str, default_value: Any,
                       default_type: Type[Any]):
     if isinstance(source_dict, MultiDict):
         value = source_dict.get(key, default_value, default_type)
