@@ -5,10 +5,13 @@ This module serves the RESTful interface required by the Tikki application.
 """
 import argparse
 import datetime
+
 from tikki import utils
 from tikki.db.tables import User, Record, RecordType, Event, UserEventLink
 from tikki.db import api as db_api, metadata as db_metadata
 from tikki.exceptions import AppException, FlaskRequestException
+from tikki.version import get_version
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_simple import (
@@ -531,7 +534,7 @@ def post_user_event_link():
 
 @app.route("/")
 def hello():
-    return "Greetings from the Tikki API V1"
+    return f'Greetings from the Tikki API (v. {get_version()})'
 
 
 if __name__ == "__main__":
