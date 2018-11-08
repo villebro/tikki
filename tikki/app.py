@@ -65,7 +65,7 @@ def login():
                                                     password_filter['password']):
             identity = utils.create_jwt_identity(user)
             return utils.flask_return_success({'jwt': create_jwt(identity),
-                                              'user': user.jsondict})
+                                              'user': user.json_dict})
         else:
             return utils.flask_return_exception('Incorrect username or password', 400)
     except Exception as e:
@@ -152,7 +152,7 @@ def get_schema():
         rows = db_api.get_rows(RecordType, {})
         result_list = list()
         for row in rows:
-            result = row.jsondict
+            result = row.json_dict
             result['ask'] = 1 if jwt_id is not None and row.category_id == 2 and \
                 row.category_id not in type_dict else 0
             result_list.append(result)
@@ -169,7 +169,7 @@ def get_user():
                              )
     try:
         users = db_api.get_rows(User, filters)
-        return utils.flask_return_success([i.jsondict for i in users])
+        return utils.flask_return_success([i.json_dict for i in users])
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -189,7 +189,7 @@ def post_user():
         user = db_api.add_row(User, in_user)
         identity = utils.create_jwt_identity(user)
         return utils.flask_return_success({'jwt': create_jwt(identity),
-                                          'user': user.jsondict})
+                                          'user': user.json_dict})
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -207,7 +207,7 @@ def put_user():
         in_user['password'] = generate_password_hash(in_user['password'])
         filters = {'id': get_jwt_identity()}
         user = db_api.update_row(User, filters, in_user)
-        return utils.flask_return_success(user.jsondict)
+        return utils.flask_return_success(user.json_dict)
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -228,7 +228,7 @@ def patch_user():
             in_user['password'] = generate_password_hash(in_user['password'])
         filters = {'id': in_user.pop('id', None)}
         user = db_api.update_row(User, filters, in_user)
-        return utils.flask_return_success(user.jsondict)
+        return utils.flask_return_success(user.json_dict)
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -322,7 +322,7 @@ def get_record():
                              )
     try:
         rows = db_api.get_rows(Record, filters)
-        return utils.flask_return_success([row.jsondict for row in rows])
+        return utils.flask_return_success([row.json_dict for row in rows])
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -359,7 +359,7 @@ def post_record():
             row.update(validated)
 
         record = db_api.add_row(Record, row)
-        return utils.flask_return_success(record.jsondict)
+        return utils.flask_return_success(record.json_dict)
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -397,7 +397,7 @@ def patch_record():
 
         filters = {'id': row.pop('id', None)}
         record = db_api.update_row(Record, filters, row)
-        return utils.flask_return_success(record.jsondict)
+        return utils.flask_return_success(record.json_dict)
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -435,7 +435,7 @@ def put_record():
             row.update(validated)
 
         record = db_api.update_row(Record, filters, row)
-        return utils.flask_return_success(record.jsondict)
+        return utils.flask_return_success(record.json_dict)
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -448,7 +448,7 @@ def get_event():
                              )
     try:
         rows = db_api.get_rows(Event, filters)
-        return utils.flask_return_success([row.jsondict for row in rows])
+        return utils.flask_return_success([row.json_dict for row in rows])
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -470,7 +470,7 @@ def post_event():
                                           'organization_id': 0, 'user_id': user},
                              )
         event = db_api.add_row(Event, row)
-        return utils.flask_return_success(event.jsondict)
+        return utils.flask_return_success(event.json_dict)
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -494,7 +494,7 @@ def put_event():
 
         filters = {'id': row.pop('id', None)}
         event = db_api.update_row(Event, filters, row)
-        return utils.flask_return_success(event.jsondict)
+        return utils.flask_return_success(event.json_dict)
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -507,7 +507,7 @@ def get_user_event_link():
                              )
     try:
         rows = db_api.get_rows(UserEventLink, filters)
-        return utils.flask_return_success([row.jsondict for row in rows])
+        return utils.flask_return_success([row.json_dict for row in rows])
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -526,7 +526,7 @@ def post_user_event_link():
                              )
 
         obj = db_api.add_row(UserEventLink, row)
-        return utils.flask_return_success(obj.jsondict)
+        return utils.flask_return_success(obj.json_dict)
     except (AppException, FlaskRequestException) as e:
         return utils.flask_handle_exception(e)
 
