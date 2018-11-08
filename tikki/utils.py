@@ -95,7 +95,7 @@ def parse_value(value: Any, default_type: Type[Any]) -> Any:
     return value if isinstance(value, default_type) else None
 
 
-def get_anydict_value(source_dict: Dict[Any], key: str, default_value: Any,
+def get_anydict_value(source_dict: Dict[str, Any], key: str, default_value: Any,
                       default_type: Type[Any]):
     if isinstance(source_dict, MultiDict):
         value = source_dict.get(key, default_value, default_type)
