@@ -3,8 +3,9 @@ Module containing type ids and their schenas that are used throughout the applic
 These are currently regenerated at the end of the migration process, but will be moved
 to a dedicated migration step once wording and schemas are finalized.
 """
+import re
 from enum import IntEnum
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Tuple, Type, TypeVar
 
 import pandas as pd
 
@@ -14,6 +15,7 @@ from tikki.db.tables import (
     MilitaryStatus,
     Performance,
     RecordType,
+    TestLimit,
     UserType,
 )
 
@@ -84,12 +86,12 @@ def _populate_dimension_from_file(t: Type[T], filename: str) -> List[T]:
         row_dict = {}
         for col in cols:
             row_dict[col] = row[col]
-        ret_list.append(t(**row_dict))
+        ret_list.append(t(**row_dict))  # type: ignore
 
     return ret_list
 
 
-dim_map: Dict[T, List[T]] = {}
+dim_map: Dict[Any, Any] = {}
 for dim in base_dimensions:
     dim_type, filename = dim[0], dim[1]
     dim_list = _populate_dimension_from_file(dim_type, filename)
@@ -97,7 +99,7 @@ for dim in base_dimensions:
 
 
 def _get_dimension_map(dimension_list: List[T]) -> Dict[int, T]:
-    return {row.id: row for row in dimension_list}
+    return {row.id: row for row in dimension_list}  # type: ignore
 
 
 # Category types
@@ -224,3 +226,61 @@ _append_record_type(16, 2, 'Sick leave', {
             '6': '31-60',
             '7': '61-120',
             '8': 'yli 120 päivää'}}})
+
+
+def _get_limit_rows_from_file(filename: str) -> List[TestLimit]:
+    ret_list: List[TestLimit] = []
+    gender_map = {
+        'm': int(GenderEnum.MALE),
+        'f': int(GenderEnum.FEMALE),
+    }
+    military_status_map = {
+        's': int(MilitaryStatusEnum.SOLDIER),
+        'c': int(MilitaryStatusEnum.CIVILIAN),
+        'x': int(MilitaryStatusEnum.CONSCRIPT),
+    }
+    file_map = {
+        'coopers.csv': int(RecordTypeEnum.COOPERS_TEST),
+        'standingjump.csv': int(RecordTypeEnum.STANDING_JUMP),
+        'situp.csv': int(RecordTypeEnum.SIT_UPS),
+        'pushup.csv': int(RecordTypeEnum.PUSH_UP_60_TEST),
+    }
+    record_type_id = file_map[filename]
+    regex = re.compile(r'([scx])([mf])(\d{1,2})-(\d{2,3})')
+
+    data = pd.read_csv('tikki/data/' + filename, header=0, sep='\t')
+    limit_cols = {}
+    for col in list(data):
+        match = regex.match(col)
+        if match:
+            military_status_id = int(military_status_map[match[1]])
+            gender_id = int(gender_map[match.group(2)])
+            age_lower_limit = int(match.group(3))
+            age_upper_limit = int(match.group(4))
+            limit_cols[col] = (military_status_id, gender_id, age_lower_limit, age_upper_limit)  # noqa
+
+    lag_upper_limit: Dict[str, Tuple[int, int, int, int]] = {}
+    for _, row in data.sort_values('score', ascending=False).iterrows():
+        for col, ids in limit_cols.items():
+            upper_limit = lag_upper_limit.get(col, 10 * row[col])
+            lower_limit = row[col]
+            ret_list.append(TestLimit(record_type_id=record_type_id,
+                                      military_status_id=ids[0],
+                                      gender_id=ids[1],
+                                      age_lower_limit=ids[2],
+                                      age_upper_limit=ids[3],
+                                      upper_limit=upper_limit,
+                                      lower_limit=lower_limit,
+                                      performance_id=row['performance_id'],
+                                      score=row['score'],
+                                      ))
+            lag_upper_limit[col] = lower_limit
+
+    return ret_list
+
+
+test_limits: List[TestLimit] = []
+test_limits.extend(_get_limit_rows_from_file('coopers.csv'))
+test_limits.extend(_get_limit_rows_from_file('pushup.csv'))
+test_limits.extend(_get_limit_rows_from_file('standingjump.csv'))
+test_limits.extend(_get_limit_rows_from_file('situp.csv'))

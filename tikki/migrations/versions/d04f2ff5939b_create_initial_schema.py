@@ -84,6 +84,7 @@ def upgrade():
                               default=func.now()),
                     sa.Column('payload', JSONType, nullable=False))
 
+
 def downgrade():
     op.drop_table('fact_user_event_link')
     op.drop_table('fact_record')

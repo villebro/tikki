@@ -1,18 +1,11 @@
 """ Module for handling database interactions """
-import re
-
-import pandas as pd
-
 import sqlalchemy as sa
 import sqlalchemy.orm as sao
 
-from typing import List, Dict, Any, Type, TypeVar, Tuple
+from typing import List, Dict, Any, Type, TypeVar
 
 from tikki import utils
-from tikki.db.tables import (
-    Base,
-    TestLimit,
-)
+from tikki.db.tables import Base, TestLimit
 from tikki.db import metadata, views
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
 
@@ -175,19 +168,6 @@ def update_rows(base_class: Type[Base], filter_by: Dict[str, Any],
     return rows
 
 
-def _populate_dimension_from_file(t: Type[T], filename: str) -> List[T]:
-    ret_list: List[T] = []
-    data = pd.read_csv('tikki/data/' + filename, header=0, sep='\t')
-    cols = list(data)
-    for _, row in data.iterrows():
-        row_dict = {}
-        for col in cols:
-            row_dict[col] = row[col]
-        ret_list.append(t(**row_dict))
-
-    return ret_list
-
-
 def regenerate_dimensions():
     """Rebuild dimension tables and views.
     """
@@ -224,79 +204,20 @@ def regenerate_views():
         session.rollback()
 
 
-def _get_limit_rows_from_file(filename: str) -> List[TestLimit]:
-    ret_list: List[TestLimit] = []
-    gender_map = {
-        'm': int(metadata.GenderEnum.MALE),
-        'f': int(metadata.GenderEnum.FEMALE),
-    }
-    military_status_map = {
-        's': int(metadata.MilitaryStatusEnum.SOLDIER),
-        'c': int(metadata.MilitaryStatusEnum.CIVILIAN),
-        'x': int(metadata.MilitaryStatusEnum.CONSCRIPT),
-    }
-    file_map = {
-        'coopers.csv': int(metadata.RecordTypeEnum.COOPERS_TEST),
-        'standingjump.csv': int(metadata.RecordTypeEnum.STANDING_JUMP),
-        'situp.csv': int(metadata.RecordTypeEnum.SIT_UPS),
-        'pushup.csv': int(metadata.RecordTypeEnum.PUSH_UP_60_TEST),
-    }
-    record_type_id = file_map[filename]
-    regex = re.compile(r'([scx])([mf])(\d{1,2})-(\d{2,3})')
-
-    data = pd.read_csv('tikki/data/' + filename, header=0, sep='\t')
-    limit_cols = {}
-    for col in list(data):
-        match = regex.match(col)
-        if match:
-            military_status_id = int(military_status_map[match[1]])
-            gender_id = int(gender_map[match.group(2)])
-            age_lower_limit = int(match.group(3))
-            age_upper_limit = int(match.group(4))
-            limit_cols[col] = (military_status_id, gender_id, age_lower_limit, age_upper_limit)  # noqa
-
-    lag_upper_limit: Dict[str, Tuple[int, int, int, int]] = {}
-    for _, row in data.sort_values('score', ascending=False).iterrows():
-        for col, ids in limit_cols.items():
-            upper_limit = lag_upper_limit.get(col, 10 * row[col])
-            lower_limit = row[col]
-            ret_list.append(TestLimit(record_type_id=record_type_id,
-                                      military_status_id=ids[0],
-                                      gender_id=ids[1],
-                                      age_lower_limit=ids[2],
-                                      age_upper_limit=ids[3],
-                                      upper_limit=upper_limit,
-                                      lower_limit=lower_limit,
-                                      performance_id=row['performance_id'],
-                                      score=row['score'],
-                                      ))
-            lag_upper_limit[col] = lower_limit
-
-    return ret_list
-
-
 def regenerate_limits():
-    """
-    limits: List[TestLimit] = []
-    limits.extend(_get_limit_rows_from_file('coopers.csv'))
-    limits.extend(_get_limit_rows_from_file('pushup.csv'))
-    limits.extend(_get_limit_rows_from_file('standingjump.csv'))
-    limits.extend(_get_limit_rows_from_file('situp.csv'))
-
     global SESSION
     session = SESSION()
     logger = utils.get_logger()
     try:
         logger.info('Regenerate dim_test_limit data in database')
         session.query(TestLimit).delete()
-        for limit in limits:
+        for limit in metadata.test_limits:
             session.add(limit)
         session.commit()
     except Exception as ex:
         print(ex)
         logger.exception(ex)
         session.rollback()
-        """
 
 
 def drop_metadata():
