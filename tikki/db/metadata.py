@@ -4,9 +4,18 @@ These are currently regenerated at the end of the migration process, but will be
 to a dedicated migration step once wording and schemas are finalized.
 """
 from enum import IntEnum
-from typing import Any, Dict
+from typing import Any, Dict, List, Type, TypeVar
 
-from tikki.db.tables import Category, Gender, MilitaryStatus, Performance, RecordType
+import pandas as pd
+
+from tikki.db.tables import (
+    Category,
+    Gender,
+    MilitaryStatus,
+    Performance,
+    RecordType,
+    UserType,
+)
 
 
 class PerformanceEnum(IntEnum):
@@ -56,69 +65,48 @@ class RecordTypeEnum(IntEnum):
     SICK_LEAVE = 16
 
 
+T = TypeVar('T')
+
+base_dimensions = [
+    (Category, 'dim_category.csv'),
+    (Gender, 'dim_gender.csv'),
+    (MilitaryStatus, 'dim_military_status.csv'),
+    (Performance, 'dim_performance.csv'),
+    (UserType, 'dim_user_type.csv'),
+]
+
+
+def _populate_dimension_from_file(t: Type[T], filename: str) -> List[T]:
+    ret_list: List[T] = []
+    data = pd.read_csv('tikki/data/' + filename, header=0, sep='\t')
+    cols = list(data)
+    for _, row in data.iterrows():
+        row_dict = {}
+        for col in cols:
+            row_dict[col] = row[col]
+        ret_list.append(t(**row_dict))
+
+    return ret_list
+
+
+dim_map: Dict[T, List[T]] = {}
+for dim in base_dimensions:
+    dim_type, filename = dim[0], dim[1]
+    dim_list = _populate_dimension_from_file(dim_type, filename)
+    dim_map[dim_type] = dim_list
+
+
+def _get_dimension_map(dimension_list: List[T]) -> Dict[int, T]:
+    return {row.id: row for row in dimension_list}
+
+
 # Category types
 
-military_statuses: Dict[int, MilitaryStatus] = {}
 
-
-def _append_military_status(id_: int, name: str):
-    global military_statuses
-    military_statuses[id_] = MilitaryStatus(id=id_, name=name)
-
-
-_append_military_status(0, 'Unknown')
-_append_military_status(1, 'Civilian')
-_append_military_status(2, 'Soldier')
-_append_military_status(3, 'Conscript')
-
-# Category types
-
-categories: Dict[int, Category] = {}
-
-
-def _append_category(id_: int, name: str):
-    global categories
-    categories[id_] = Category(id=id_, name=name)
-
-
-_append_category(0, 'Unknown')
-_append_category(1, 'Test')
-_append_category(2, 'Questionnaire')
-
-# Genders
-
-genders: Dict[int, Gender] = {}
-
-
-def _append_gender(id_: int, name: str):
-    global genders
-    genders[id_] = Gender(id=id_, name=name)
-
-
-_append_gender(0, 'Unknown')
-_append_gender(1, 'Male')
-_append_gender(2, 'Female')
-
-# Performances
-
-performances: Dict[int, Performance] = {}
-
-
-def _append_performance(id_: int, name: str):
-    global performances
-    performances[id_] = Performance(id=id_, name=name)
-
-
-_append_performance(6, 'Excellent')
-_append_performance(5, 'Very Good')
-_append_performance(4, 'Good')
-_append_performance(3, 'Satisfactory')
-_append_performance(2, 'Sufficient')
-_append_performance(1, 'Poor')
-_append_performance(0, 'Inadequate')
-
-# Record types
-
+military_statuses: Dict[int, MilitaryStatus] = _get_dimension_map(dim_map[MilitaryStatus])
+categories: Dict[int, Category] = _get_dimension_map(dim_map[Category])
+genders: Dict[int, Gender] = _get_dimension_map(dim_map[Gender])
+performances: Dict[int, Performance] = _get_dimension_map(dim_map[Performance])
 record_types: Dict[int, RecordType] = {}
 
 

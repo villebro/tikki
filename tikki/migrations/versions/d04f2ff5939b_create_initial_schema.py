@@ -18,6 +18,10 @@ depends_on = None
 
 
 def upgrade():
+    op.create_table('dim_user_type',
+                    sa.Column('id', sa.Integer, primary_key=True),
+                    sa.Column('name', sa.String, nullable=False))
+
     op.create_table('dim_category',
                     sa.Column('id', sa.Integer, primary_key=True),
                     sa.Column('name', sa.String, nullable=False))
@@ -80,7 +84,6 @@ def upgrade():
                               default=func.now()),
                     sa.Column('payload', JSONType, nullable=False))
 
-
 def downgrade():
     op.drop_table('fact_user_event_link')
     op.drop_table('fact_record')
@@ -88,3 +91,4 @@ def downgrade():
     op.drop_table('fact_user')
     op.drop_table('dim_record_type')
     op.drop_table('dim_category_type')
+    op.drop_table('dim_user_type')

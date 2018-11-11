@@ -6,17 +6,20 @@ import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as sao
 
-from typing import List, Dict, Any, Type, Tuple
+from typing import List, Dict, Any, Type, TypeVar, Tuple
 
 from tikki import utils
 from tikki.db.tables import (
-    Base, Category, Gender, MilitaryStatus, Performance, RecordType, TestLimit
+    Base,
+    TestLimit,
 )
 from tikki.db import metadata, views
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
 
 # Initialisation
 SESSION = None  # type: Any
+
+T = TypeVar('T')
 
 
 def init(app):
@@ -172,37 +175,32 @@ def update_rows(base_class: Type[Base], filter_by: Dict[str, Any],
     return rows
 
 
+def _populate_dimension_from_file(t: Type[T], filename: str) -> List[T]:
+    ret_list: List[T] = []
+    data = pd.read_csv('tikki/data/' + filename, header=0, sep='\t')
+    cols = list(data)
+    for _, row in data.iterrows():
+        row_dict = {}
+        for col in cols:
+            row_dict[col] = row[col]
+        ret_list.append(t(**row_dict))
+
+    return ret_list
+
+
 def regenerate_dimensions():
     """Rebuild dimension tables and views.
     """
     global SESSION
     session = SESSION()
     logger = utils.get_logger()
+
     try:
-        logger.info('Regenerate dim_category data in database')
-        session.query(Category).delete()
-        for category in metadata.categories.values():
-            session.add(category)
-
-        logger.info('Regenerate dim_record_type data in database')
-        session.query(RecordType).delete()
-        for record_type in metadata.record_types.values():
-            session.add(record_type)
-
-        logger.info('Regenerate dim_performance data in database')
-        session.query(Performance).delete()
-        for performance in metadata.performances.values():
-            session.add(performance)
-
-        logger.info('Regenerate dim_gender data in database')
-        session.query(Gender).delete()
-        for gender in metadata.genders.values():
-            session.add(gender)
-
-        logger.info('Regenerate dim_military_status data in database')
-        session.query(MilitaryStatus).delete()
-        for military_status in metadata.military_statuses.values():
-            session.add(military_status)
+        for dim_type in metadata.dim_map.keys():
+            session.query(dim_type).delete()
+            logger.info(f'Regenerate {dim_type.__name__} data in database')
+            for dim_row in metadata.dim_map[dim_type]:
+                session.add(dim_row)
 
         session.commit()
     except Exception as ex:
@@ -226,7 +224,7 @@ def regenerate_views():
         session.rollback()
 
 
-def get_rows_from_file(filename: str) -> List[TestLimit]:
+def _get_limit_rows_from_file(filename: str) -> List[TestLimit]:
     ret_list: List[TestLimit] = []
     gender_map = {
         'm': int(metadata.GenderEnum.MALE),
@@ -238,10 +236,10 @@ def get_rows_from_file(filename: str) -> List[TestLimit]:
         'x': int(metadata.MilitaryStatusEnum.CONSCRIPT),
     }
     file_map = {
-        'coopers.tsv': int(metadata.RecordTypeEnum.COOPERS_TEST),
-        'standingjump.tsv': int(metadata.RecordTypeEnum.STANDING_JUMP),
-        'situp.tsv': int(metadata.RecordTypeEnum.SIT_UPS),
-        'pushup.tsv': int(metadata.RecordTypeEnum.PUSH_UP_60_TEST),
+        'coopers.csv': int(metadata.RecordTypeEnum.COOPERS_TEST),
+        'standingjump.csv': int(metadata.RecordTypeEnum.STANDING_JUMP),
+        'situp.csv': int(metadata.RecordTypeEnum.SIT_UPS),
+        'pushup.csv': int(metadata.RecordTypeEnum.PUSH_UP_60_TEST),
     }
     record_type_id = file_map[filename]
     regex = re.compile(r'([scx])([mf])(\d{1,2})-(\d{2,3})')
@@ -278,11 +276,12 @@ def get_rows_from_file(filename: str) -> List[TestLimit]:
 
 
 def regenerate_limits():
+    """
     limits: List[TestLimit] = []
-    limits.extend(get_rows_from_file('coopers.csv'))
-    limits.extend(get_rows_from_file('pushup.csv'))
-    limits.extend(get_rows_from_file('standingjump.csv'))
-    limits.extend(get_rows_from_file('situp.csv'))
+    limits.extend(_get_limit_rows_from_file('coopers.csv'))
+    limits.extend(_get_limit_rows_from_file('pushup.csv'))
+    limits.extend(_get_limit_rows_from_file('standingjump.csv'))
+    limits.extend(_get_limit_rows_from_file('situp.csv'))
 
     global SESSION
     session = SESSION()
@@ -297,6 +296,7 @@ def regenerate_limits():
         print(ex)
         logger.exception(ex)
         session.rollback()
+        """
 
 
 def drop_metadata():

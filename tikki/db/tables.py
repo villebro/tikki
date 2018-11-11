@@ -49,6 +49,21 @@ class Category(Base):
                 }
 
 
+class UserType(Base):
+    """
+    Table containing user types
+    """
+    __tablename__ = 'dim_user_type'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+    @property
+    def json_dict(self):
+        return {'id': self.id,
+                'name': self.name,
+                }
+
+
 class RecordType(Base):
     """
     Table containing record types
@@ -77,7 +92,7 @@ class User(Base):
     id = sa.Column(UUIDType, primary_key=True)
     username = sa.Column(sa.String, nullable=False, unique=True)
     password = sa.Column(sa.String, nullable=False)
-    type_id = sa.Column(sa.Integer, nullable=False, default=1)
+    type_id = sa.Column(sa.Integer, sa.ForeignKey('dim_user_type.id'), nullable=False)
     created_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
     updated_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
     payload = sa.Column(JSONType, nullable=False)
