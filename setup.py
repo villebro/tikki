@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import os
 from setuptools import setup, find_packages
 
 from tikki.version import get_version
-
-datadir = os.path.join('tikki', 'data')
-datafiles = [(d, [os.path.join(d, f) for f in files])
-             for d, folders, files in os.walk(datadir)]
 
 with open('README.rst') as f:
     readme = f.read()
@@ -23,9 +18,9 @@ setup(
     maintainer='Ville Brofeldt',
     maintainer_email='ville.brofeldt@streamroller.io',
     url='https://github.com/tikki-fi/tikki',
+    include_package_data=True,
     license='MIT',
     packages=find_packages(exclude=('tests', 'docs')),
-    data_files=datafiles,
     install_requires=[
         'alembic',
         'flask',

@@ -5,10 +5,12 @@ to a dedicated migration step once wording and schemas are finalized.
 """
 import re
 from enum import IntEnum
+import os
 from typing import Any, Dict, List, Tuple, Type, TypeVar
 
 import pandas as pd
 
+import tikki.data
 from tikki.db.tables import (
     Category,
     Gender,
@@ -80,7 +82,8 @@ base_dimensions = [
 
 def _populate_dimension_from_file(t: Type[T], filename: str) -> List[T]:
     ret_list: List[T] = []
-    data = pd.read_csv('tikki/data/' + filename, header=0, sep='\t')
+    path = os.path.join(os.path.dirname(tikki.data.__file__), filename)
+    data = pd.read_csv(path, header=0, sep='\t')
     cols = list(data)
     for _, row in data.iterrows():
         row_dict = {}
@@ -248,7 +251,8 @@ def _get_limit_rows_from_file(filename: str) -> List[TestLimit]:
     record_type_id = file_map[filename]
     regex = re.compile(r'([scx])([mf])(\d{1,2})-(\d{2,3})')
 
-    data = pd.read_csv('tikki/data/' + filename, header=0, sep='\t')
+    path = os.path.join(os.path.dirname(tikki.data.__file__), filename)
+    data = pd.read_csv(path, header=0, sep='\t')
     limit_cols = {}
     for col in list(data):
         match = regex.match(col)

@@ -1,7 +1,10 @@
+import os
+
 import argparse
 
 from tikki.app import app
 from tikki.db import api as db_api
+import tikki
 
 parser = argparse.ArgumentParser(description='Tikki application backend')
 parser.add_argument('-r', '--runserver', help='start the server', action='store_true')
@@ -18,7 +21,9 @@ elif args.migrate:
     from alembic.config import Config
     from alembic import command
 
-    alembic_cfg = Config('alembic.ini')
+    path = os.path.join(os.path.dirname(tikki.__file__), 'alembic.ini')
+    print(path)
+    alembic_cfg = Config(path)
     if args.migrate == 'up':
         command.upgrade(alembic_cfg, 'head')
         db_api.regenerate_dimensions()
