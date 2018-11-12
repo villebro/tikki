@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 from tikki.version import get_version
 
@@ -20,7 +20,11 @@ setup(
     url='https://github.com/tikki-fi/tikki',
     include_package_data=True,
     license='MIT',
-    packages=find_packages(exclude=('tests', 'docs')),
+    entry_points={
+        'console_scripts': [
+            'tikki = tikki.__main__:main'
+        ]
+    },
     install_requires=[
         'alembic',
         'flask',
