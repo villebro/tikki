@@ -20,7 +20,8 @@ def main():
     parser.add_argument('-r', '--runserver', help='start the server', action='store_true')
     parser.add_argument('-m', '--migrate', help='run database migrations',
                         choices=['up', 'down'])
-    parser.add_argument('-c', '--create', help='create a new database migration')
+    parser.add_argument('-c', '--create', metavar='MESSAGE', 
+                        help='create a new database migration')
     parser.add_argument('-v', '--validate', help='check if server can be started',
                         action='store_true')
 
