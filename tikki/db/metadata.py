@@ -3,10 +3,23 @@ Module containing type ids and their schenas that are used throughout the applic
 These are currently regenerated at the end of the migration process, but will be moved
 to a dedicated migration step once wording and schemas are finalized.
 """
+import re
 from enum import IntEnum
-from typing import Any, Dict
+import os
+from typing import Any, Dict, List, Tuple, Type, TypeVar
 
-from tikki.db.tables import Category, Gender, MilitaryStatus, Performance, RecordType
+import pandas as pd
+
+import tikki.data
+from tikki.db.tables import (
+    Category,
+    Gender,
+    MilitaryStatus,
+    Performance,
+    RecordType,
+    TestLimit,
+    UserType,
+)
 
 
 class PerformanceEnum(IntEnum):
@@ -56,69 +69,49 @@ class RecordTypeEnum(IntEnum):
     SICK_LEAVE = 16
 
 
+T = TypeVar('T')
+
+base_dimensions = [
+    (Category, 'dim_category.tsv'),
+    (Gender, 'dim_gender.tsv'),
+    (MilitaryStatus, 'dim_military_status.tsv'),
+    (Performance, 'dim_performance.tsv'),
+    (UserType, 'dim_user_type.tsv'),
+]
+
+
+def _populate_dimension_from_file(t: Type[T], filename: str) -> List[T]:
+    ret_list: List[T] = []
+    path = os.path.join(os.path.dirname(tikki.data.__file__), filename)
+    data = pd.read_csv(path, header=0, sep='\t')
+    cols = list(data)
+    for _, row in data.iterrows():
+        row_dict = {}
+        for col in cols:
+            row_dict[col] = row[col]
+        ret_list.append(t(**row_dict))  # type: ignore
+
+    return ret_list
+
+
+dim_map: Dict[Any, Any] = {}
+for dim in base_dimensions:
+    dim_type, filename = dim[0], dim[1]
+    dim_list = _populate_dimension_from_file(dim_type, filename)
+    dim_map[dim_type] = dim_list
+
+
+def _get_dimension_map(dimension_list: List[T]) -> Dict[int, T]:
+    return {row.id: row for row in dimension_list}  # type: ignore
+
+
 # Category types
 
-military_statuses: Dict[int, MilitaryStatus] = {}
 
-
-def _append_military_status(id_: int, name: str):
-    global military_statuses
-    military_statuses[id_] = MilitaryStatus(id=id_, name=name)
-
-
-_append_military_status(0, 'Unknown')
-_append_military_status(1, 'Civilian')
-_append_military_status(2, 'Soldier')
-_append_military_status(3, 'Conscript')
-
-# Category types
-
-categories: Dict[int, Category] = {}
-
-
-def _append_category(id_: int, name: str):
-    global categories
-    categories[id_] = Category(id=id_, name=name)
-
-
-_append_category(0, 'Unknown')
-_append_category(1, 'Test')
-_append_category(2, 'Questionnaire')
-
-# Genders
-
-genders: Dict[int, Gender] = {}
-
-
-def _append_gender(id_: int, name: str):
-    global genders
-    genders[id_] = Gender(id=id_, name=name)
-
-
-_append_gender(0, 'Unknown')
-_append_gender(1, 'Male')
-_append_gender(2, 'Female')
-
-# Performances
-
-performances: Dict[int, Performance] = {}
-
-
-def _append_performance(id_: int, name: str):
-    global performances
-    performances[id_] = Performance(id=id_, name=name)
-
-
-_append_performance(6, 'Excellent')
-_append_performance(5, 'Very Good')
-_append_performance(4, 'Good')
-_append_performance(3, 'Satisfactory')
-_append_performance(2, 'Sufficient')
-_append_performance(1, 'Poor')
-_append_performance(0, 'Inadequate')
-
-# Record types
-
+military_statuses: Dict[int, MilitaryStatus] = _get_dimension_map(dim_map[MilitaryStatus])
+categories: Dict[int, Category] = _get_dimension_map(dim_map[Category])
+genders: Dict[int, Gender] = _get_dimension_map(dim_map[Gender])
+performances: Dict[int, Performance] = _get_dimension_map(dim_map[Performance])
 record_types: Dict[int, RecordType] = {}
 
 
@@ -236,3 +229,62 @@ _append_record_type(16, 2, 'Sick leave', {
             '6': '31-60',
             '7': '61-120',
             '8': 'yli 120 päivää'}}})
+
+
+def _get_limit_rows_from_file(filename: str) -> List[TestLimit]:
+    ret_list: List[TestLimit] = []
+    gender_map = {
+        'm': int(GenderEnum.MALE),
+        'f': int(GenderEnum.FEMALE),
+    }
+    military_status_map = {
+        's': int(MilitaryStatusEnum.SOLDIER),
+        'c': int(MilitaryStatusEnum.CIVILIAN),
+        'x': int(MilitaryStatusEnum.CONSCRIPT),
+    }
+    file_map = {
+        'coopers.tsv': int(RecordTypeEnum.COOPERS_TEST),
+        'standingjump.tsv': int(RecordTypeEnum.STANDING_JUMP),
+        'situp.tsv': int(RecordTypeEnum.SIT_UPS),
+        'pushup.tsv': int(RecordTypeEnum.PUSH_UP_60_TEST),
+    }
+    record_type_id = file_map[filename]
+    regex = re.compile(r'([scx])([mf])(\d{1,2})-(\d{2,3})')
+
+    path = os.path.join(os.path.dirname(tikki.data.__file__), filename)
+    data = pd.read_csv(path, header=0, sep='\t')
+    limit_cols = {}
+    for col in list(data):
+        match = regex.match(col)
+        if match:
+            military_status_id = int(military_status_map[match[1]])
+            gender_id = int(gender_map[match.group(2)])
+            age_lower_limit = int(match.group(3))
+            age_upper_limit = int(match.group(4))
+            limit_cols[col] = (military_status_id, gender_id, age_lower_limit, age_upper_limit)  # noqa
+
+    lag_upper_limit: Dict[str, Tuple[int, int, int, int]] = {}
+    for _, row in data.sort_values('score', ascending=False).iterrows():
+        for col, ids in limit_cols.items():
+            upper_limit = lag_upper_limit.get(col, 10 * row[col])
+            lower_limit = row[col]
+            ret_list.append(TestLimit(record_type_id=record_type_id,
+                                      military_status_id=ids[0],
+                                      gender_id=ids[1],
+                                      age_lower_limit=ids[2],
+                                      age_upper_limit=ids[3],
+                                      upper_limit=upper_limit,
+                                      lower_limit=lower_limit,
+                                      performance_id=row['performance_id'],
+                                      score=row['score'],
+                                      ))
+            lag_upper_limit[col] = lower_limit
+
+    return ret_list
+
+
+test_limits: List[TestLimit] = []
+test_limits.extend(_get_limit_rows_from_file('coopers.tsv'))
+test_limits.extend(_get_limit_rows_from_file('pushup.tsv'))
+test_limits.extend(_get_limit_rows_from_file('standingjump.tsv'))
+test_limits.extend(_get_limit_rows_from_file('situp.tsv'))

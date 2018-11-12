@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 from tikki.version import get_version
-
 
 with open('README.rst') as f:
     readme = f.read()
@@ -19,8 +18,13 @@ setup(
     maintainer='Ville Brofeldt',
     maintainer_email='ville.brofeldt@streamroller.io',
     url='https://github.com/tikki-fi/tikki',
+    include_package_data=True,
     license='MIT',
-    packages=find_packages(exclude=('tests', 'docs')),
+    entry_points={
+        'console_scripts': [
+            'tikki = tikki.__main__:main'
+        ]
+    },
     install_requires=[
         'alembic',
         'flask',
@@ -33,6 +37,8 @@ setup(
         'werkzeug',
     ],
     classifiers=[
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Intended Audience :: Developers',

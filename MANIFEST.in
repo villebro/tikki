@@ -1,0 +1,7 @@
+recursive-include tikki/migrations *
+include tikki/data/*.csv
+include tikki/alembic.ini
+include LICENSE
+recursive-exclude tests *
+global-exclude __pycache__
+global-exclude *.py[co]

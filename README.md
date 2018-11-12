@@ -45,6 +45,15 @@ To do this, run the following
 docker run -d -p 5432:5432 --name tikki-postgres -e POSTGRES_PASSWORD=tikkipwd postgres
 ```
 
+### Creating new database migration ###
+
+Tikki uses alembic to manage database revisions. To create a new migration run tikki
+using the `--create` (or `-c` for short):
+
+```python
+python tikki --create "my new migration"
+```
+
 ### Bumping dependencies ###
 
 `requirements.txt` is dynamically generated with pinned versions using pip-compile from 

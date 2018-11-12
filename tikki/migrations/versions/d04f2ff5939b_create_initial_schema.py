@@ -18,6 +18,10 @@ depends_on = None
 
 
 def upgrade():
+    op.create_table('dim_user_type',
+                    sa.Column('id', sa.Integer, primary_key=True),
+                    sa.Column('name', sa.String, nullable=False))
+
     op.create_table('dim_category',
                     sa.Column('id', sa.Integer, primary_key=True),
                     sa.Column('name', sa.String, nullable=False))
@@ -88,3 +92,4 @@ def downgrade():
     op.drop_table('fact_user')
     op.drop_table('dim_record_type')
     op.drop_table('dim_category_type')
+    op.drop_table('dim_user_type')
