@@ -51,7 +51,7 @@ Tikki uses alembic to manage database revisions. To create a new migration run t
 using the `--create` (or `-c` for short):
 
 ```python
-python tikki/__main__.py --create "my new migration"
+python tikki --create "my new migration"
 ```
 
 ### Bumping dependencies ###
