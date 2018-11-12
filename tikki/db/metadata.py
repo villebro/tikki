@@ -72,11 +72,11 @@ class RecordTypeEnum(IntEnum):
 T = TypeVar('T')
 
 base_dimensions = [
-    (Category, 'dim_category.csv'),
-    (Gender, 'dim_gender.csv'),
-    (MilitaryStatus, 'dim_military_status.csv'),
-    (Performance, 'dim_performance.csv'),
-    (UserType, 'dim_user_type.csv'),
+    (Category, 'dim_category.tsv'),
+    (Gender, 'dim_gender.tsv'),
+    (MilitaryStatus, 'dim_military_status.tsv'),
+    (Performance, 'dim_performance.tsv'),
+    (UserType, 'dim_user_type.tsv'),
 ]
 
 
@@ -243,10 +243,10 @@ def _get_limit_rows_from_file(filename: str) -> List[TestLimit]:
         'x': int(MilitaryStatusEnum.CONSCRIPT),
     }
     file_map = {
-        'coopers.csv': int(RecordTypeEnum.COOPERS_TEST),
-        'standingjump.csv': int(RecordTypeEnum.STANDING_JUMP),
-        'situp.csv': int(RecordTypeEnum.SIT_UPS),
-        'pushup.csv': int(RecordTypeEnum.PUSH_UP_60_TEST),
+        'coopers.tsv': int(RecordTypeEnum.COOPERS_TEST),
+        'standingjump.tsv': int(RecordTypeEnum.STANDING_JUMP),
+        'situp.tsv': int(RecordTypeEnum.SIT_UPS),
+        'pushup.tsv': int(RecordTypeEnum.PUSH_UP_60_TEST),
     }
     record_type_id = file_map[filename]
     regex = re.compile(r'([scx])([mf])(\d{1,2})-(\d{2,3})')
@@ -284,7 +284,7 @@ def _get_limit_rows_from_file(filename: str) -> List[TestLimit]:
 
 
 test_limits: List[TestLimit] = []
-test_limits.extend(_get_limit_rows_from_file('coopers.csv'))
-test_limits.extend(_get_limit_rows_from_file('pushup.csv'))
-test_limits.extend(_get_limit_rows_from_file('standingjump.csv'))
-test_limits.extend(_get_limit_rows_from_file('situp.csv'))
+test_limits.extend(_get_limit_rows_from_file('coopers.tsv'))
+test_limits.extend(_get_limit_rows_from_file('pushup.tsv'))
+test_limits.extend(_get_limit_rows_from_file('standingjump.tsv'))
+test_limits.extend(_get_limit_rows_from_file('situp.tsv'))
