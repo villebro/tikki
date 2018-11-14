@@ -184,6 +184,7 @@ def post_user():
                                  required={'username': str, 'password': str},
                                  defaultable={'id': uuid, 'created_at': now,
                                               'updated_at': now, 'payload': {}},
+                                 constant={'type_id': 1},
                                  )
         in_user['password'] = generate_password_hash(in_user['password'])
         user = db_api.add_row(User, in_user)
