@@ -1,3 +1,6 @@
+# Common
+.DS_Store
+
 # pipenv
 Pipfile
 Pipfile.lock
