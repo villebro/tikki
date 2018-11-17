@@ -31,6 +31,7 @@ setup(
         'flask-cors',
         'flask-jwt-simple',
         'pandas',
+        'pyjwt',
         'python-dateutil',
         'sqlalchemy',
         'sqlalchemy-utils',
