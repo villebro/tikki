@@ -5,7 +5,7 @@ import sqlalchemy.orm as sao
 from typing import List, Dict, Any, Type, TypeVar
 
 from tikki import utils
-from tikki.db.tables import Base, TestLimit
+from tikki.db.tables import Base, TestLimit, RecordType
 from tikki.db import metadata, views
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
 
@@ -181,6 +181,11 @@ def regenerate_dimensions():
             logger.info(f'Regenerate {dim_type.__name__} data in database')
             for dim_row in metadata.dim_map[dim_type]:
                 session.add(dim_row)
+
+        logger.info(f'Regenerate RecordType data in database')
+        session.query(RecordType).delete()
+        for record_type in metadata.record_types.values():
+            session.add(record_type)
 
         session.commit()
     except Exception as ex:
