@@ -31,6 +31,7 @@ from tikki.exceptions import (
 
 from werkzeug.datastructures import MultiDict
 
+import jwt
 
 
 def _add_config_from_env(app: Any, config_key: str, env_variable: str,
@@ -74,6 +75,16 @@ def get_sqla_uri() -> str:
 
 def get_logger() -> logging.Logger:
     return logging.getLogger('tikki')
+
+
+def get_auth0_payload(app: Any, request):
+    verify = True if app.config['VALIDATE_LOGIN'] else False
+    public_key = app.config['AUTH0_PUBLIC_KEY']
+    audience = app.config['AUTH0_AUDIENCE']
+    token = get_args(request.json, required={'token': str})['token'].encode()
+    payload = jwt.decode(token, public_key, algorithms=['RS256'],
+                         audience=audience, verify=verify)
+    return payload
 
 
 def init_app(app: Any):
