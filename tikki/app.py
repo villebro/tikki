@@ -200,10 +200,8 @@ def put_user():
         utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
         in_user = utils.get_args(received=request.json,
-                                 optional={'username': str, 'password': str},
                                  defaultable={'created_at': now, 'updated_at': now,
                                               'payload': {}})
-        in_user['password'] = generate_password_hash(in_user['password'])
         filters = {'id': get_jwt_identity()}
         user = db_api.update_row(User, filters, in_user)
         return utils.flask_return_success(user.json_dict)
@@ -221,10 +219,7 @@ def patch_user():
                                  required={'id': str},
                                  defaultable={'updated_at': now},
                                  optional={'created_at': datetime.datetime,
-                                           'username': str, 'password': str,
                                            'payload': dict})
-        if 'password' in in_user:
-            in_user['password'] = generate_password_hash(in_user['password'])
         filters = {'id': in_user.pop('id', None)}
         user = db_api.update_row(User, filters, in_user)
         return utils.flask_return_success(user.json_dict)

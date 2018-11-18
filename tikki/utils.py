@@ -10,7 +10,7 @@ import dateutil.parser
 
 import json
 
-from jwt.algorithms import RSAAlgorithm
+from jwt.algorithms import RSAAlgorithm  # type: ignore
 
 import logging
 import os
@@ -35,8 +35,8 @@ import jwt
 
 
 def _add_config_from_env(app: Any, config_key: str, env_variable: str,
-                         missing_list: Optional[List[str]]=None,
-                         default_value: Any=None)-> bool:
+                         missing_list: Optional[List[str]] = None,
+                         default_value: Any = None)-> bool:
     """
     Function for adding configuration variables to a Flask app from environment
     variables.
@@ -117,7 +117,7 @@ def init_app(app: Any):
 
 
 def create_jwt_identity(user: tables.Base,
-                        token_payload: Dict[str, Any]=None) -> Dict[str, Any]:
+                        token_payload: Dict[str, Any] = None) -> Dict[str, Any]:
     identity: Dict[str, Any] = {'sub': str(user.id), 'rol': user.type_id}
     if token_payload and 'iat' in token_payload:
         identity['iat'] = token_payload['iat']
