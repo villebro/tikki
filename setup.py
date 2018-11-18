@@ -27,6 +27,7 @@ setup(
     },
     install_requires=[
         'alembic',
+        'cryptography',
         'flask',
         'flask-cors',
         'flask-jwt-simple',
