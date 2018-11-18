@@ -91,7 +91,6 @@ class User(Base):
     __tablename__ = 'fact_user'
     id = sa.Column(UUIDType, primary_key=True)
     username = sa.Column(sa.String, nullable=False, unique=True)
-    password = sa.Column(sa.String, nullable=False)
     type_id = sa.Column(sa.Integer, sa.ForeignKey('dim_user_type.id'), nullable=False)
     created_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())
     updated_at = sa.Column(sa.DateTime, nullable=False, default=sa.func.now())

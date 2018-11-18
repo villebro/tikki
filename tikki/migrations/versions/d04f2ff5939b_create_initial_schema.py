@@ -35,7 +35,6 @@ def upgrade():
     op.create_table('fact_user',
                     sa.Column('id', UUIDType, primary_key=True),
                     sa.Column('username', sa.String, nullable=False, unique=True),
-                    sa.Column('password', sa.String, nullable=False),
                     sa.Column('type_id', sa.Integer, nullable=False, default=1),
                     sa.Column('created_at', sa.DateTime, nullable=False,
                               default=func.now()),

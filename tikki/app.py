@@ -12,7 +12,9 @@ from tikki.exceptions import AppException, FlaskRequestException
 from tikki.version import get_version
 
 from flask import Flask, request, jsonify
+
 from flask_cors import CORS
+
 from flask_jwt_simple import (
     create_jwt,
     get_jwt_identity,
@@ -20,7 +22,6 @@ from flask_jwt_simple import (
     jwt_required,
     JWTManager,
 )
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 app = Flask(__name__)
@@ -43,14 +44,12 @@ def get_obj_type(path):
 
 @jwt.jwt_data_loader
 def add_claims_to_access_token(identity):
-    now = datetime.datetime.utcnow()
-    sub, rol = identity['sub'], identity['rol']
     return {
-        'exp': now + app.config['JWT_EXPIRES'],
-        'iat': now,
-        'nbf': now,
-        'sub': sub,
-        'rol': rol
+        'exp': identity['exp'],
+        'iat': identity['iat'],
+        'nbf': identity['iat'],
+        'sub': identity['sub'],
+        'rol': identity['rol']
     }
 
 
@@ -58,16 +57,15 @@ def add_claims_to_access_token(identity):
 def login():
     try:
         utils.flask_validate_request_is_json(request)
-        username_filter = utils.get_args(request.json, required={'username': str})
-        password_filter = utils.get_args(request.json, required={'password': str})
+        payload = utils.get_auth0_payload(app, request)
+        username_filter = {'username': payload['sub']}
         user = db_api.get_row(User, username_filter)
-        if user is not None and check_password_hash(user.password,
-                                                    password_filter['password']):
-            identity = utils.create_jwt_identity(user)
+        if user:
+            identity = utils.create_jwt_identity(user, token_payload=payload)
             return utils.flask_return_success({'jwt': create_jwt(identity),
                                               'user': user.json_dict})
         else:
-            return utils.flask_return_exception('Incorrect username or password', 400)
+            return utils.flask_return_exception('User not found', 400)
     except Exception as e:
         return utils.flask_handle_exception(e)
 
@@ -178,15 +176,15 @@ def get_user():
 def post_user():
     try:
         utils.flask_validate_request_is_json(request)
+        payload = utils.get_auth0_payload(app, request)
         now = datetime.datetime.now()
         uuid = str(utils.generate_uuid())
         in_user = utils.get_args(received=request.json,
-                                 required={'username': str, 'password': str},
                                  defaultable={'id': uuid, 'created_at': now,
                                               'updated_at': now, 'payload': {}},
                                  constant={'type_id': 1},
                                  )
-        in_user['password'] = generate_password_hash(in_user['password'])
+        in_user['username'] = payload['sub']
         user = db_api.add_row(User, in_user)
         identity = utils.create_jwt_identity(user)
         return utils.flask_return_success({'jwt': create_jwt(identity),
@@ -202,10 +200,8 @@ def put_user():
         utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
         in_user = utils.get_args(received=request.json,
-                                 optional={'username': str, 'password': str},
                                  defaultable={'created_at': now, 'updated_at': now,
                                               'payload': {}})
-        in_user['password'] = generate_password_hash(in_user['password'])
         filters = {'id': get_jwt_identity()}
         user = db_api.update_row(User, filters, in_user)
         return utils.flask_return_success(user.json_dict)
@@ -223,10 +219,7 @@ def patch_user():
                                  required={'id': str},
                                  defaultable={'updated_at': now},
                                  optional={'created_at': datetime.datetime,
-                                           'username': str, 'password': str,
                                            'payload': dict})
-        if 'password' in in_user:
-            in_user['password'] = generate_password_hash(in_user['password'])
         filters = {'id': in_user.pop('id', None)}
         user = db_api.update_row(User, filters, in_user)
         return utils.flask_return_success(user.json_dict)

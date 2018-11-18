@@ -27,10 +27,12 @@ setup(
     },
     install_requires=[
         'alembic',
+        'cryptography',
         'flask',
         'flask-cors',
         'flask-jwt-simple',
         'pandas',
+        'pyjwt',
         'python-dateutil',
         'sqlalchemy',
         'sqlalchemy-utils',
