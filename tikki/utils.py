@@ -3,8 +3,23 @@ Common utilities that are used throughout the application. Move anything that is
 more than once that isn't specific to any certain functionality here.
 """
 
-from werkzeug.datastructures import MultiDict
+import flask
+
 import datetime
+import dateutil.parser
+
+import json
+
+from jwt.algorithms import RSAAlgorithm
+
+import logging
+import os
+from typing import Dict, List, Union, Optional, Any, Type, Tuple
+import traceback
+import urllib.request
+from uuid import UUID, uuid4
+
+from tikki.db import tables
 from tikki.exceptions import (
     AppException,
     DbApiException,
@@ -13,18 +28,14 @@ from tikki.exceptions import (
     Flask500Exception,
     NoRecordsException,
 )
-import flask
-import logging
-from typing import Dict, List, Union, Optional, Any, Type, Tuple
-import traceback
-from uuid import UUID, uuid4
-import dateutil.parser
-import os
-from tikki.db import tables
+
+from werkzeug.datastructures import MultiDict
+
 
 
 def _add_config_from_env(app: Any, config_key: str, env_variable: str,
-                         missing_list: List[str]) -> bool:
+                         missing_list: Optional[List[str]]=None,
+                         default_value: Any=None)-> bool:
     """
     Function for adding configuration variables to a Flask app from environment
     variables.
@@ -33,15 +44,20 @@ def _add_config_from_env(app: Any, config_key: str, env_variable: str,
     :param config_key: the name of the config key in the app: app.config[config_key]
     :param env_variable: the name of the environment variable in which the value is stored
     :param missing_list: a list of strings to which missing environment variables
-    are added
+    are added. Can be omitted.
+    :param default_value: if value is missing, set config value to this.
     :return: True if successful, False if environment variable was undefined
     """
     val = os.environ.get(env_variable, None)
     if val is not None:
         app.config[config_key] = val
         return True
+    elif default_value:
+        app.config[config_key] = default_value
+        return True
 
-    missing_list.append(env_variable)
+    if missing_list is not None:
+        missing_list.append(env_variable)
     return False
 
 
@@ -73,18 +89,30 @@ def init_app(app: Any):
 
     # Disable deprecation warning for flask-sqlalchemy
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    missing_env_vars: List[str] = []
-    _add_config_from_env(app, 'JWT_SECRET_KEY', 'TIKKI_JWT_SECRET', missing_env_vars)
-    _add_config_from_env(app, 'SQLALCHEMY_DATABASE_URI', 'TIKKI_SQLA_DB_URI',
-                         missing_env_vars)
+    missing_vars: List[str] = []
+    _add_config_from_env(app, 'JWT_SECRET_KEY', 'TIKKI_JWT_SECRET', missing_vars)
+    _add_config_from_env(app, 'SQLALCHEMY_DATABASE_URI', 'TIKKI_SQLA_DB_URI', missing_vars)  # noqa
+    _add_config_from_env(app, 'AUTH0_AUDIENCE', 'TIKKI_AUTH0_AUDIENCE', missing_vars)
+    _add_config_from_env(app, 'VALIDATE_LOGIN', 'TIKKI_VALIDATE_LOGIN', default_value=1)
 
-    if len(missing_env_vars) > 0:
+    url = 'https://tikkifi.eu.auth0.com/.well-known/jwks.json'
+    contents = urllib.request.urlopen(url).read()
+    key = json.dumps(json.loads(contents)['keys'][0])
+    app.config['AUTH0_PUBLIC_KEY'] = RSAAlgorithm.from_jwk(key)
+
+    if missing_vars:
         raise RuntimeError('Following environment variables undefined: '
-                           + ', '.join(missing_env_vars))
+                           + ', '.join(missing_vars))
 
 
-def create_jwt_identity(user: tables.Base) -> Dict[str, Any]:
-    return {'sub': str(user.id), 'rol': user.type_id}
+def create_jwt_identity(user: tables.Base,
+                        token_payload: Dict[str, Any]=None) -> Dict[str, Any]:
+    identity: Dict[str, Any] = {'sub': str(user.id), 'rol': user.type_id}
+    if token_payload and 'iat' in token_payload:
+        identity['iat'] = token_payload['iat']
+    if token_payload and 'exp' in token_payload:
+        identity['exp'] = token_payload['exp']
+    return identity
 
 
 def parse_value(value: Any, default_type: Type[Any]) -> Any:
