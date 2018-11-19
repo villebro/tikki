@@ -122,7 +122,7 @@ def _append_record_type(id_: int, category_id: int, name: str, schema: Dict[str,
 
 
 _append_record_type(0, 0, 'Unknown', {})
-_append_record_type(1, 2, "Cooper's test", {'distance': 'float'})
+_append_record_type(1, 1, "Cooper's test", {'distance': 'float'})
 _append_record_type(2, 1, 'Push-up 60 sec test', {'pushups': 'integer'})
 _append_record_type(3, 1, 'Sit-up test', {'situps': 'integer'})
 _append_record_type(4, 1, 'Standing jump', {'standingjump': 'integer'})
