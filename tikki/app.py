@@ -152,7 +152,7 @@ def get_schema():
         for row in rows:
             result = row.json_dict
             result['ask'] = 1 if jwt_id is not None and row.category_id == 2 and \
-                row.category_id not in type_dict else 0
+                row.id not in type_dict else 0
             result_list.append(result)
         return utils.flask_return_success(result_list)
     except Exception as e:
