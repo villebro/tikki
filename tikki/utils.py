@@ -78,12 +78,10 @@ def get_logger() -> logging.Logger:
 
 
 def get_auth0_payload(app: Any, request):
-    verify = True if app.config['VALIDATE_LOGIN'] else False
     public_key = app.config['AUTH0_PUBLIC_KEY']
     audience = app.config['AUTH0_AUDIENCE']
     token = get_args(request.json, required={'token': str})['token'].encode()
-    payload = jwt.decode(token, public_key, algorithms=['RS256'],
-                         audience=audience, verify=verify)
+    payload = jwt.decode(token, public_key, algorithms=['RS256'], audience=audience)
     return payload
 
 
@@ -104,7 +102,6 @@ def init_app(app: Any):
     _add_config_from_env(app, 'JWT_SECRET_KEY', 'TIKKI_JWT_SECRET', missing_vars)
     _add_config_from_env(app, 'SQLALCHEMY_DATABASE_URI', 'TIKKI_SQLA_DB_URI', missing_vars)  # noqa
     _add_config_from_env(app, 'AUTH0_AUDIENCE', 'TIKKI_AUTH0_AUDIENCE', missing_vars)
-    _add_config_from_env(app, 'VALIDATE_LOGIN', 'TIKKI_VALIDATE_LOGIN', default_value=1)
 
     url = 'https://tikkifi.eu.auth0.com/.well-known/jwks.json'
     contents = urllib.request.urlopen(url).read()
