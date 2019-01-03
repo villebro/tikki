@@ -4,6 +4,7 @@ more than once that isn't specific to any certain functionality here.
 """
 
 import flask
+from flask import request
 
 import datetime
 import dateutil.parser
@@ -11,6 +12,8 @@ import dateutil.parser
 import json
 
 from jwt.algorithms import RSAAlgorithm  # type: ignore
+
+from flask_jwt_simple import get_jwt_identity
 
 import logging
 import os
@@ -32,6 +35,9 @@ from tikki.exceptions import (
 from werkzeug.datastructures import MultiDict
 
 import jwt
+
+
+APP_NAME = 'tikki'
 
 
 def _add_config_from_env(app: Any, config_key: str, env_variable: str,
@@ -73,10 +79,6 @@ def get_sqla_uri() -> str:
     raise RuntimeError('SQLA_DB_URI environment variable undefined')
 
 
-def get_logger() -> logging.Logger:
-    return logging.getLogger('tikki')
-
-
 def get_auth0_payload(app: Any, request):
     public_key = app.config['AUTH0_PUBLIC_KEY']
     audience = app.config['AUTH0_AUDIENCE']
@@ -89,11 +91,22 @@ def init_app(app: Any):
     """
     Initializes the Flask app with all necessary config parameters.
     """
+
+    class RequestFormatter(logging.Formatter):
+        def format(self, record):
+            record.url = request.url
+            record.remote_addr = request.remote_addr
+            jwt_identity = get_jwt_identity()
+            record.jwt_identity = '' if jwt_identity is None else jwt_identity
+            return super().format(record)
+
     # Setup logging
-    logger = logging.getLogger('tikki')
+    logger = logging.getLogger(APP_NAME)
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
+    log_formatter = RequestFormatter('[%(asctime)s] - %(name)s - %(levelname)s - %(remote_addr)s - %(url)s - %(jwt_identity)s - %(message)s')  # noqa
+    ch.setFormatter(log_formatter)
     logger.addHandler(ch)
 
     # Disable deprecation warning for flask-sqlalchemy
@@ -210,13 +223,13 @@ def get_args(received: Dict[str, Any], required: Optional[Dict[str, Type[Any]]] 
     return ret_dict
 
 
-def flask_validate_request_is_json(request) -> None:
+def flask_validate_request_is_json(req) -> None:
     """
     Make sure that request contains json object; if not, raise exception
-    :param request: Flask http request
+    :param req: Flask http request
     :return:
     """
-    if not request.is_json:
+    if not req.is_json:
         raise Flask400Exception('Request body is not JSON.')
 
 
@@ -242,7 +255,8 @@ def flask_handle_exception(exception: Union[FlaskRequestException, DbApiExceptio
         return flask_return_exception(exception, 500)
     elif isinstance(exception, NoRecordsException):
         return flask_return_exception(exception, 400)
-
+    logger = logging.getLogger(APP_NAME)
+    logger.error(traceback.format_exc())
     return flask_return_exception(traceback.format_exc(), 500)
 
 

@@ -1,8 +1,9 @@
 """ Module for handling database interactions """
+import logging
+from typing import List, Dict, Any, Type, TypeVar
+
 import sqlalchemy as sa
 import sqlalchemy.orm as sao
-
-from typing import List, Dict, Any, Type, TypeVar
 
 from tikki import utils
 from tikki.db.tables import Base, TestLimit, RecordType
@@ -173,7 +174,7 @@ def regenerate_dimensions():
     """
     global SESSION
     session = SESSION()
-    logger = utils.get_logger()
+    logger = logging.getLogger(utils.APP_NAME)
 
     try:
         for dim_type in metadata.dim_map.keys():
@@ -197,7 +198,7 @@ def regenerate_dimensions():
 def regenerate_views():
     global SESSION
     session = SESSION()
-    logger = utils.get_logger()
+    logger = logging.getLogger(utils.APP_NAME)
     logger.info('Regenerate views')
     try:
         for view in views.views.values():
@@ -212,15 +213,14 @@ def regenerate_views():
 def regenerate_limits():
     global SESSION
     session = SESSION()
-    logger = utils.get_logger()
+    logger = logging.getLogger(utils.APP_NAME)
     try:
-        logger.info('Regenerate dim_test_limit data in database')
+        logging.info('Regenerate dim_test_limit data in database')
         session.query(TestLimit).delete()
         for limit in metadata.test_limits:
             session.add(limit)
         session.commit()
     except Exception as ex:
-        print(ex)
         logger.exception(ex)
         session.rollback()
 
@@ -230,7 +230,7 @@ def drop_metadata():
     """
     global SESSION
     session = SESSION()
-    logger = utils.get_logger()
+    logger = logging.getLogger(utils.APP_NAME)
     try:
         logger.info('Drop views')
         for view in sorted(views.views.values(), reverse=True):
@@ -239,5 +239,5 @@ def drop_metadata():
         session.commit()
     except Exception as ex:
         print(ex)
-        logger.exception(ex)
+        logger.error(ex)
         session.rollback()

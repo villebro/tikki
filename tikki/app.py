@@ -4,6 +4,7 @@
 This module serves the RESTful interface required by the Tikki application.
 """
 import datetime
+import logging
 
 from tikki import utils
 from tikki.db.tables import User, Record, RecordType, Event, UserEventLink
@@ -24,8 +25,10 @@ from flask_jwt_simple import (
 )
 
 
-app = Flask(__name__)
+# basic initialization
+app = Flask(utils.APP_NAME)
 utils.init_app(app)
+log = logging.getLogger(utils.APP_NAME)
 db_api.init(app)
 jwt = JWTManager(app)
 CORS(app)
@@ -55,6 +58,7 @@ def add_claims_to_access_token(identity):
 
 @app.route('/login', methods=['POST'])
 def login():
+    app.logger.debug(request)
     try:
         utils.flask_validate_request_is_json(request)
         payload = utils.get_auth0_payload(app, request)
@@ -129,6 +133,7 @@ def get_whoami():
 @app.route('/schema', methods=['GET'], strict_slashes=False)
 @jwt_optional
 def get_schema():
+    log.info('schema')
     try:
         jwt_id = get_jwt_identity()
         type_dict = dict()
@@ -155,8 +160,8 @@ def get_schema():
                 row.id not in type_dict else 0
             result_list.append(result)
         return utils.flask_return_success(result_list)
-    except Exception as e:
-        return utils.flask_handle_exception(e)
+    except Exception as ex:
+        return utils.flask_handle_exception(ex)
 
 
 @app.route('/user', methods=['GET'], strict_slashes=False)
@@ -528,6 +533,25 @@ def post_user_event_link():
 @app.route("/")
 def hello():
     return f'Greetings from the Tikki API (v. {get_version()})'
+
+
+@app.route("/test", methods=['GET'])
+@jwt_optional
+def test():
+    try:
+        args = utils.get_args(received=request.args, required={'type': str})
+        if args['type'] == 'error':
+            log.error(f'!! {request}')
+        elif args['type'] == 'warning':
+            log.warning(request)
+        elif args['type'] == 'info':
+            log.info(request)
+        elif args['type'] == 'debug':
+            log.debug(request)
+        return utils.flask_return_success(args)
+    except (AppException, FlaskRequestException) as e:
+        log.error(request)
+        return utils.flask_handle_exception(e)
 
 
 if __name__ == "__main__":
