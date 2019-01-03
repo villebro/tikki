@@ -140,7 +140,7 @@ def parse_value(value: Any, default_type: Type[Any]) -> Any:
     # datetimes will be sent in string format, therefore need
     # to be parsed first
     if default_type is datetime.datetime and isinstance(value, str):
-        return dateutil.parser.parse(value)
+        return dateutil.parser.parse(value, ignoretz=True)
     return value if isinstance(value, default_type) else None
 
 
