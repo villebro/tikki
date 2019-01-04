@@ -191,7 +191,7 @@ def post_user():
                                  )
         in_user['username'] = payload['sub']
         user = db_api.add_row(User, in_user)
-        identity = utils.create_jwt_identity(user)
+        identity = utils.create_jwt_identity(user, payload)
         return utils.flask_return_success({'jwt': create_jwt(identity),
                                           'user': user.json_dict})
     except Exception as e:
