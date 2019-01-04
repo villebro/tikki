@@ -4,7 +4,7 @@ more than once that isn't specific to any certain functionality here.
 """
 
 import flask
-from flask import request
+from flask import request, has_request_context
 
 import datetime
 import dateutil.parser
@@ -94,10 +94,13 @@ def init_app(app: Any):
 
     class RequestFormatter(logging.Formatter):
         def format(self, record):
-            record.url = request.url
-            record.remote_addr = request.remote_addr
-            jwt_identity = get_jwt_identity()
-            record.jwt_identity = '' if jwt_identity is None else jwt_identity
+            if has_request_context():
+                record.url = request.url
+                record.remote_addr = request.remote_addr
+                jwt_identity = get_jwt_identity()
+                record.jwt_identity = '' if jwt_identity is None else jwt_identity
+            else:
+                record.url, record.remote_addr, record.jwt_identity = '', '', ''
             return super().format(record)
 
     # Setup logging
