@@ -233,9 +233,9 @@ def drop_metadata():
     logger = logging.getLogger(utils.APP_NAME)
     try:
         logger.info('Drop views')
-        for view in sorted(views.views.values(), reverse=True):
+        for view in sorted(views.views.keys(), reverse=True):
             print(view)
-            session.execute(view)
+            session.execute(f'drop view if exists {view};')
         session.commit()
     except Exception as ex:
         print(ex)

@@ -90,5 +90,5 @@ def downgrade():
     op.drop_table('fact_event')
     op.drop_table('fact_user')
     op.drop_table('dim_record_type')
-    op.drop_table('dim_category_type')
+    op.drop_table('dim_category')
     op.drop_table('dim_user_type')
