@@ -7,7 +7,6 @@ import datetime
 import logging
 
 
-import jose.jwt
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_simple import (JWTManager, create_jwt, get_jwt_identity,
@@ -78,59 +77,6 @@ def login():
                                               'user': user.json_dict})
         else:
             return utils.flask_return_exception('User not found', 400)
-    except Exception as e:
-        return utils.flask_handle_exception(e)
-
-
-@app.route('/login/v2', methods=['POST'])
-def login_v2():
-    app.logger.debug(request)
-    try:
-        utils.flask_validate_request_is_json(request)
-        token = request.json['token']
-        jwks = app.config['AUTH0_JWKS']
-
-        unverified_header = jose.jwt.get_unverified_header(token)
-        rsa_key = {}
-        for key in jwks["keys"]:
-            if key["kid"] == unverified_header["kid"]:
-                rsa_key = {
-                    "kty": key["kty"],
-                    "kid": key["kid"],
-                    "use": key["use"],
-                    "n": key["n"],
-                    "e": key["e"]
-                }
-        if rsa_key:
-            try:
-                payload = jose.jwt.decode(
-                    token,
-                    rsa_key,
-                    algorithms=["RS256"],
-                    audience=app.config['AUTH0_AUDIENCE'],
-                    issuer='https://tikkifi.eu.auth0.com/.well-known/jwks.json'
-                )
-            except jose.jwt.ExpiredSignatureError:
-                return utils.flask_return_exception('token is expired', 401)
-            except jose.jwt.JWTClaimsError:
-                return utils.flask_return_exception(
-                    "incorrect claims, please check the audience and issuer",
-                    401
-                )
-            except Exception:
-                return utils.flask_return_exception(
-                    "Unable to parse authentication token",
-                    401
-                )
-            username_filter = {'username': payload['sub']}
-            user = db_api.get_row(User, username_filter)
-            if user:
-                identity = utils.create_jwt_identity(user, token_payload=payload)
-                return utils.flask_return_success({'jwt': create_jwt(identity),
-                                                  'user': user.json_dict})
-            else:
-                return utils.flask_return_exception('User not found', 400)
-        return utils.flask_return_exception("Unable to find appropriate key", 401)
     except Exception as e:
         return utils.flask_handle_exception(e)
 

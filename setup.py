@@ -32,7 +32,6 @@ setup(
         'pandas',
         'pyjwt',
         'python-dateutil',
-        'python-jose',
         'requests',
         'sqlalchemy',
         'sqlalchemy-utils',
