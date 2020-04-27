@@ -3,39 +3,27 @@ Common utilities that are used throughout the application. Move anything that is
 more than once that isn't specific to any certain functionality here.
 """
 
-import flask
-from flask import request, has_request_context
-
 import datetime
-import dateutil.parser
-
 import json
-
-from jwt.algorithms import RSAAlgorithm  # type: ignore
-
-from flask_jwt_simple import get_jwt_identity
-
 import logging
 import os
-from typing import Dict, List, Union, Optional, Any, Type, Tuple
 import traceback
 import urllib.request
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from uuid import UUID, uuid4
 
-from tikki.db import tables
-from tikki.exceptions import (
-    AppException,
-    DbApiException,
-    FlaskRequestException,
-    Flask400Exception,
-    Flask500Exception,
-    NoRecordsException,
-)
-
+import dateutil.parser
+import flask
+import jwt
+from flask import has_request_context, request
+from flask_jwt_simple import get_jwt_identity
+from jwt.algorithms import RSAAlgorithm  # type: ignore
 from werkzeug.datastructures import MultiDict
 
-import jwt
-
+from tikki.db import tables
+from tikki.exceptions import (AppException, DbApiException, Flask400Exception,
+                              Flask500Exception, FlaskRequestException,
+                              NoRecordsException)
 
 APP_NAME = 'tikki'
 
@@ -121,21 +109,22 @@ def init_app(app: Any):
 
     url = 'https://tikkifi.eu.auth0.com/.well-known/jwks.json'
     contents = urllib.request.urlopen(url).read()
+    jwks = json.loads(contents)
+    app.config['AUTH0_JWKS'] = jwks
     key = json.dumps(json.loads(contents)['keys'][0])
     app.config['AUTH0_PUBLIC_KEY'] = RSAAlgorithm.from_jwk(key)
+
 
     if missing_vars:
         raise RuntimeError('Following environment variables undefined: '
                            + ', '.join(missing_vars))
 
 
-def create_jwt_identity(user: tables.Base,
-                        token_payload: Dict[str, Any] = None) -> Dict[str, Any]:
+def create_jwt_identity(user: tables.Base) -> Dict[str, Any]:
     identity: Dict[str, Any] = {'sub': str(user.id), 'rol': user.type_id}
-    if token_payload and 'iat' in token_payload:
-        identity['iat'] = token_payload['iat']
-    if token_payload and 'exp' in token_payload:
-        identity['exp'] = token_payload['exp']
+    now = datetime.datetime.utcnow()
+    identity["iat"] = int(now.timestamp())
+    identity["exp"] = int((now + datetime.timedelta(days=1)).timestamp())
     return identity
 
 

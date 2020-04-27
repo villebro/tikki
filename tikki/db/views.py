@@ -4,7 +4,6 @@ only postgres is supported.
 """
 from typing import Dict
 
-
 views: Dict[str, str] = {}
 
 views['view_user'] = """create or replace view view_user as

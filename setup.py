@@ -7,7 +7,7 @@ with open('README.rst') as f:
 
 setup(
     name='tikki',
-    version='0.9.6',
+    version='0.999.dev0',
     description='Tikki Field Aptitude Performance Data Collection Platform',
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -32,6 +32,8 @@ setup(
         'pandas',
         'pyjwt',
         'python-dateutil',
+        'python-jose',
+        'requests',
         'sqlalchemy',
         'sqlalchemy-utils',
         'werkzeug',

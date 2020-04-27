@@ -1,13 +1,13 @@
 """ Module for handling database interactions """
 import logging
-from typing import List, Dict, Any, Type, TypeVar
+from typing import Any, Dict, List, Type, TypeVar
 
 import sqlalchemy as sa
 import sqlalchemy.orm as sao
 
 from tikki import utils
-from tikki.db.tables import Base, TestLimit, RecordType
 from tikki.db import metadata, views
+from tikki.db.tables import Base, RecordType, TestLimit
 from tikki.exceptions import NoRecordsException, TooManyRecordsException
 
 # Initialisation

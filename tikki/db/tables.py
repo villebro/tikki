@@ -2,11 +2,12 @@
 Module containing all SQL Alchemy table classes that are used by the platform.
 """
 import json
-import sqlalchemy as sa
-from sqlalchemy.ext.declarative import declarative_base
-import sqlalchemy.orm as sao
 from typing import Any, Dict
-from sqlalchemy_utils import UUIDType, JSONType
+
+import sqlalchemy as sa
+import sqlalchemy.orm as sao
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy_utils import JSONType, UUIDType
 
 
 class TikkiBase(object):
