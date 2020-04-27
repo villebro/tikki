@@ -114,7 +114,6 @@ def init_app(app: Any):
     key = json.dumps(json.loads(contents)['keys'][0])
     app.config['AUTH0_PUBLIC_KEY'] = RSAAlgorithm.from_jwk(key)
 
-
     if missing_vars:
         raise RuntimeError('Following environment variables undefined: '
                            + ', '.join(missing_vars))
