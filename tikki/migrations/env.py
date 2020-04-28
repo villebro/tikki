@@ -1,6 +1,7 @@
-from alembic import context
-from sqlalchemy import engine_from_config, MetaData, pool
 from logging.config import fileConfig
+
+from alembic import context
+from sqlalchemy import MetaData, engine_from_config, pool
 
 from tikki.app import app
 

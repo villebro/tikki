@@ -3,23 +3,16 @@ Module containing type ids and their schenas that are used throughout the applic
 These are currently regenerated at the end of the migration process, but will be moved
 to a dedicated migration step once wording and schemas are finalized.
 """
+import os
 import re
 from enum import IntEnum
-import os
 from typing import Any, Dict, List, Tuple, Type, TypeVar
 
 import pandas as pd
 
 import tikki.data
-from tikki.db.tables import (
-    Category,
-    Gender,
-    MilitaryStatus,
-    Performance,
-    RecordType,
-    TestLimit,
-    UserType,
-)
+from tikki.db.tables import (Category, Gender, MilitaryStatus, Performance,
+                             RecordType, TestLimit, UserType)
 
 
 class PerformanceEnum(IntEnum):

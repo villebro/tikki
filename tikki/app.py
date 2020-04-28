@@ -6,24 +6,19 @@ This module serves the RESTful interface required by the Tikki application.
 import datetime
 import logging
 
+
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from flask_jwt_simple import (JWTManager, create_jwt, get_jwt_identity,
+                              jwt_optional, jwt_required)
+import requests
+
 from tikki import utils
-from tikki.db.tables import User, Record, RecordType, Event, UserEventLink
-from tikki.db import api as db_api, metadata as db_metadata
+from tikki.db import api as db_api
+from tikki.db import metadata as db_metadata
+from tikki.db.tables import Event, Record, RecordType, User, UserEventLink
 from tikki.exceptions import AppException, FlaskRequestException
 from tikki.version import get_version
-
-from flask import Flask, request, jsonify
-
-from flask_cors import CORS
-
-from flask_jwt_simple import (
-    create_jwt,
-    get_jwt_identity,
-    jwt_optional,
-    jwt_required,
-    JWTManager,
-)
-
 
 # basic initialization
 app = Flask(utils.APP_NAME)
@@ -59,13 +54,25 @@ def add_claims_to_access_token(identity):
 @app.route('/login', methods=['POST'])
 def login():
     app.logger.debug(request)
+    token = utils.get_args(request.json, required={'token': str})['token']
     try:
-        utils.flask_validate_request_is_json(request)
-        payload = utils.get_auth0_payload(app, request)
-        username_filter = {'username': payload['sub']}
-        user = db_api.get_row(User, username_filter)
+        if "." not in token:
+            # "new" opaque token
+            response = requests.get(
+                url="https://tikkifi.eu.auth0.com/userinfo",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            body = response.json()
+            username = body["sub"]
+        else:
+            # legacy token
+            utils.flask_validate_request_is_json(request)
+            payload = utils.get_auth0_payload(app, request)
+            username = payload['sub']
+
+        user = db_api.get_row(User, {'username': username})
         if user:
-            identity = utils.create_jwt_identity(user, token_payload=payload)
+            identity = utils.create_jwt_identity(user)
             return utils.flask_return_success({'jwt': create_jwt(identity),
                                               'user': user.json_dict})
         else:

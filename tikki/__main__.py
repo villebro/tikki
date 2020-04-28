@@ -1,13 +1,12 @@
-import os
-
 import argparse
-
-from tikki.app import app
-from tikki.db import api as db_api
-import tikki
+import os
 
 import alembic.command
 from alembic.config import Config
+
+import tikki
+from tikki.app import app
+from tikki.db import api as db_api
 
 
 def _get_alembic_config() -> Config:

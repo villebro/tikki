@@ -5,10 +5,10 @@ Revises:
 Create Date: 2018-09-26 16:38:10.912454
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy import func
-from sqlalchemy_utils import UUIDType, JSONType
+from sqlalchemy_utils import JSONType, UUIDType
 
 # revision identifiers, used by Alembic.
 revision = 'd04f2ff5939b'
