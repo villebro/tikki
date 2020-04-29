@@ -5,7 +5,7 @@ This module serves the RESTful interface required by the Tikki application.
 """
 import datetime
 import logging
-
+from typing import Any, Dict
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -55,6 +55,7 @@ def add_claims_to_access_token(identity):
 def login():
     app.logger.debug(request)
     token = utils.get_args(request.json, required={'token': str})['token']
+    user_payload: Dict[str, Any] = {}
     try:
         if "." not in token:
             # "new" opaque token
@@ -63,6 +64,10 @@ def login():
                 headers={"Authorization": f"Bearer {token}"},
             )
             body = response.json()
+            if 'email' in body:
+                user_payload["email"] = body["email"]
+            if 'name' in body:
+                user_payload["name"] = body["name"]
             username = body["sub"]
         else:
             # legacy token
@@ -71,12 +76,23 @@ def login():
             username = payload['sub']
 
         user = db_api.get_row(User, {'username': username})
-        if user:
-            identity = utils.create_jwt_identity(user)
-            return utils.flask_return_success({'jwt': create_jwt(identity),
-                                              'user': user.json_dict})
-        else:
-            return utils.flask_return_exception('User not found', 400)
+        if not user:
+            uuid = str(utils.generate_uuid())
+            user_payload = {
+                "id": uuid,
+                "username": username,
+                "payload": {},
+                "type_id": 1
+            }
+            user = db_api.add_row(User, user_payload)
+
+        identity = utils.create_jwt_identity(user)
+        return utils.flask_return_success(
+            {
+                'jwt': create_jwt(identity),
+                'user': user_payload if user_payload else user.json_dict
+            }
+        )
     except Exception as e:
         return utils.flask_handle_exception(e)
 
