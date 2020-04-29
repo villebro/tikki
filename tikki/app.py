@@ -339,9 +339,11 @@ def get_pushup60test_compstat():
 @app.route('/record', methods=['GET'], strict_slashes=False)
 @jwt_required
 def get_record():
-    filters = utils.get_args(received=request.args,
-                             optional={'id': str, 'user_id': str, 'event_id': str},
-                             )
+    filters = utils.get_args(
+        received=request.args,
+        constant={'user_id': get_jwt_identity()},
+        optional={'id': str, 'event_id': str, 'type_id': int},
+    )
     try:
         rows = db_api.get_rows(Record, filters)
         return utils.flask_return_success([row.json_dict for row in rows])
@@ -356,13 +358,20 @@ def post_record():
         utils.flask_validate_request_is_json(request)
         now = datetime.datetime.now()
         uuid = str(utils.generate_uuid())
-        row = utils.get_args(received=request.json,
-                             optional={'event_id': str},
-                             defaultable={'id': uuid, 'created_at': now,
-                                          'updated_at': now, 'payload': {},
-                                          'type_id': 0,
-                                          'user_id': get_jwt_identity()},
-                             )
+        row = utils.get_args(
+            received=request.json,
+            optional={'event_id': str},
+            constant={
+                'user_id': get_jwt_identity(),
+            },
+            defaultable={
+                'id': uuid,
+                'created_at': now,
+                'updated_at': now,
+                'payload': {},
+                'type_id': 0,
+            }
+        )
 
         # Add created_user which defaults to the user_id, merging it with the
         # main row object.
