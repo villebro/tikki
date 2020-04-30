@@ -423,7 +423,7 @@ def patch_record():
                                    defaultable={'validated_at': now},
                                    optional={'validated_user_id': str},
                                    )
-        if validated['validated_user_id'] is not None:
+        if validated.get('validated_user_id') is not None:
             row.update(validated)
 
         filters = {'id': row.pop('id', None)}
@@ -462,7 +462,7 @@ def put_record():
                                    defaultable={'validated_at': now},
                                    optional={'validated_user_id': str},
                                    )
-        if validated['validated_user_id'] is not None:
+        if validated.get('validated_user_id') is not None:
             row.update(validated)
 
         record = db_api.update_row(Record, filters, row)
